@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+build/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Model files (keep these, but ignore if regenerated)
+# Uncomment if you want to ignore model files:
+# *.pkl
+
+# Data files (keep these, but ignore if regenerated)
+# Uncomment if you want to ignore data files:
+# *.csv
+
+# Logs
+*.log
+logs/
