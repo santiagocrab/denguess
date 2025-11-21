@@ -13,8 +13,18 @@
     {
       "src": "/(.*)",
       "dest": "/frontend/dist/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/dist/index.html"
     }
   ],
-  "buildCommand": "npm install && npm run build"
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "buildCommand": "cd frontend && npm install && npm run build"
 }
 
