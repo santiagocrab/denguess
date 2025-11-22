@@ -1,0 +1,346 @@
+date,barangay,cases
+2020-01-01,General Paulino Santos,4
+2020-02-01,General Paulino Santos,7
+2020-03-01,General Paulino Santos,0
+2020-04-01,General Paulino Santos,0
+2020-05-01,General Paulino Santos,0
+2020-06-01,General Paulino Santos,0
+2020-07-01,General Paulino Santos,4
+2020-08-01,General Paulino Santos,5
+2020-09-01,General Paulino Santos,0
+2020-10-01,General Paulino Santos,0
+2020-11-01,General Paulino Santos,1
+2020-12-01,General Paulino Santos,3
+2020-01-01,Morales,4
+2020-02-01,Morales,1
+2020-03-01,Morales,1
+2020-04-01,Morales,1
+2020-05-01,Morales,0
+2020-06-01,Morales,0
+2020-07-01,Morales,4
+2020-08-01,Morales,1
+2020-09-01,Morales,1
+2020-10-01,Morales,0
+2020-11-01,Morales,1
+2020-12-01,Morales,2
+2020-01-01,Santa Cruz,1
+2020-02-01,Santa Cruz,3
+2020-03-01,Santa Cruz,1
+2020-04-01,Santa Cruz,1
+2020-05-01,Santa Cruz,0
+2020-06-01,Santa Cruz,0
+2020-07-01,Santa Cruz,4
+2020-08-01,Santa Cruz,1
+2020-09-01,Santa Cruz,1
+2020-10-01,Santa Cruz,0
+2020-11-01,Santa Cruz,0
+2020-12-01,Santa Cruz,2
+2020-01-01,Sto. Niño,5
+2020-02-01,Sto. Niño,1
+2020-03-01,Sto. Niño,1
+2020-04-01,Sto. Niño,0
+2020-05-01,Sto. Niño,0
+2020-06-01,Sto. Niño,0
+2020-07-01,Sto. Niño,0
+2020-08-01,Sto. Niño,0
+2020-09-01,Sto. Niño,0
+2020-10-01,Sto. Niño,0
+2020-11-01,Sto. Niño,0
+2020-12-01,Sto. Niño,2
+2020-01-01,Zone II,1
+2020-02-01,Zone II,1
+2020-03-01,Zone II,1
+2020-04-01,Zone II,0
+2020-05-01,Zone II,0
+2020-06-01,Zone II,0
+2020-07-01,Zone II,0
+2020-08-01,Zone II,0
+2020-09-01,Zone II,0
+2020-10-01,Zone II,0
+2020-11-01,Zone II,1
+2020-12-01,Zone II,0
+2021-01-01,General Paulino Santos,1
+2021-02-01,General Paulino Santos,3
+2021-03-01,General Paulino Santos,5
+2021-04-01,General Paulino Santos,3
+2021-05-01,General Paulino Santos,7
+2021-06-01,General Paulino Santos,5
+2021-07-01,General Paulino Santos,3
+2021-08-01,General Paulino Santos,7
+2021-09-01,General Paulino Santos,0
+2021-10-01,General Paulino Santos,0
+2021-11-01,General Paulino Santos,2
+2021-12-01,General Paulino Santos,3
+2021-01-01,Morales,1
+2021-02-01,Morales,6
+2021-03-01,Morales,5
+2021-04-01,Morales,2
+2021-05-01,Morales,2
+2021-06-01,Morales,5
+2021-07-01,Morales,2
+2021-08-01,Morales,3
+2021-09-01,Morales,1
+2021-10-01,Morales,0
+2021-11-01,Morales,1
+2021-12-01,Morales,0
+2021-01-01,Santa Cruz,3
+2021-02-01,Santa Cruz,6
+2021-03-01,Santa Cruz,6
+2021-04-01,Santa Cruz,12
+2021-05-01,Santa Cruz,8
+2021-06-01,Santa Cruz,4
+2021-07-01,Santa Cruz,4
+2021-08-01,Santa Cruz,4
+2021-09-01,Santa Cruz,3
+2021-10-01,Santa Cruz,1
+2021-11-01,Santa Cruz,0
+2021-12-01,Santa Cruz,1
+2021-01-01,Sto. Niño,3
+2021-02-01,Sto. Niño,3
+2021-03-01,Sto. Niño,3
+2021-04-01,Sto. Niño,6
+2021-05-01,Sto. Niño,12
+2021-06-01,Sto. Niño,0
+2021-07-01,Sto. Niño,0
+2021-08-01,Sto. Niño,0
+2021-09-01,Sto. Niño,2
+2021-10-01,Sto. Niño,1
+2021-11-01,Sto. Niño,0
+2021-12-01,Sto. Niño,0
+2021-01-01,Zone II,0
+2021-02-01,Zone II,2
+2021-03-01,Zone II,3
+2021-04-01,Zone II,3
+2021-05-01,Zone II,0
+2021-06-01,Zone II,0
+2021-07-01,Zone II,0
+2021-08-01,Zone II,0
+2021-09-01,Zone II,2
+2021-10-01,Zone II,1
+2021-11-01,Zone II,0
+2021-12-01,Zone II,0
+2022-01-01,General Paulino Santos,0
+2022-02-01,General Paulino Santos,1
+2022-03-01,General Paulino Santos,2
+2022-04-01,General Paulino Santos,4
+2022-05-01,General Paulino Santos,7
+2022-06-01,General Paulino Santos,5
+2022-07-01,General Paulino Santos,6
+2022-08-01,General Paulino Santos,10
+2022-09-01,General Paulino Santos,4
+2022-10-01,General Paulino Santos,2
+2022-11-01,General Paulino Santos,2
+2022-12-01,General Paulino Santos,5
+2022-01-01,Morales,1
+2022-02-01,Morales,11
+2022-03-01,Morales,2
+2022-04-01,Morales,1
+2022-05-01,Morales,2
+2022-06-01,Morales,3
+2022-07-01,Morales,1
+2022-08-01,Morales,6
+2022-09-01,Morales,1
+2022-10-01,Morales,1
+2022-11-01,Morales,1
+2022-12-01,Morales,1
+2022-01-01,Santa Cruz,3
+2022-02-01,Santa Cruz,1
+2022-03-01,Santa Cruz,3
+2022-04-01,Santa Cruz,2
+2022-05-01,Santa Cruz,5
+2022-06-01,Santa Cruz,3
+2022-07-01,Santa Cruz,5
+2022-08-01,Santa Cruz,2
+2022-09-01,Santa Cruz,1
+2022-10-01,Santa Cruz,1
+2022-11-01,Santa Cruz,2
+2022-12-01,Santa Cruz,4
+2022-01-01,Sto. Niño,3
+2022-02-01,Sto. Niño,0
+2022-03-01,Sto. Niño,0
+2022-04-01,Sto. Niño,2
+2022-05-01,Sto. Niño,1
+2022-06-01,Sto. Niño,5
+2022-07-01,Sto. Niño,0
+2022-08-01,Sto. Niño,1
+2022-09-01,Sto. Niño,1
+2022-10-01,Sto. Niño,1
+2022-11-01,Sto. Niño,0
+2022-12-01,Sto. Niño,1
+2022-01-01,Zone II,1
+2022-02-01,Zone II,1
+2022-03-01,Zone II,0
+2022-04-01,Zone II,1
+2022-05-01,Zone II,1
+2022-06-01,Zone II,1
+2022-07-01,Zone II,0
+2022-08-01,Zone II,0
+2022-09-01,Zone II,1
+2022-10-01,Zone II,1
+2022-11-01,Zone II,0
+2022-12-01,Zone II,0
+2023-01-01,General Paulino Santos,8
+2023-02-01,General Paulino Santos,12
+2023-03-01,General Paulino Santos,2
+2023-04-01,General Paulino Santos,4
+2023-05-01,General Paulino Santos,7
+2023-06-01,General Paulino Santos,6
+2023-07-01,General Paulino Santos,12
+2023-08-01,General Paulino Santos,7
+2023-09-01,General Paulino Santos,5
+2023-10-01,General Paulino Santos,9
+2023-11-01,General Paulino Santos,11
+2023-12-01,General Paulino Santos,4
+2023-01-01,Morales,2
+2023-02-01,Morales,10
+2023-03-01,Morales,1
+2023-04-01,Morales,2
+2023-05-01,Morales,7
+2023-06-01,Morales,4
+2023-07-01,Morales,14
+2023-08-01,Morales,15
+2023-09-01,Morales,10
+2023-10-01,Morales,12
+2023-11-01,Morales,10
+2023-12-01,Morales,9
+2023-01-01,Santa Cruz,7
+2023-02-01,Santa Cruz,10
+2023-03-01,Santa Cruz,2
+2023-04-01,Santa Cruz,7
+2023-05-01,Santa Cruz,4
+2023-06-01,Santa Cruz,6
+2023-07-01,Santa Cruz,15
+2023-08-01,Santa Cruz,10
+2023-09-01,Santa Cruz,11
+2023-10-01,Santa Cruz,5
+2023-11-01,Santa Cruz,4
+2023-12-01,Santa Cruz,2
+2023-01-01,Sto. Niño,2
+2023-02-01,Sto. Niño,0
+2023-03-01,Sto. Niño,1
+2023-04-01,Sto. Niño,1
+2023-05-01,Sto. Niño,5
+2023-06-01,Sto. Niño,3
+2023-07-01,Sto. Niño,3
+2023-08-01,Sto. Niño,6
+2023-09-01,Sto. Niño,4
+2023-10-01,Sto. Niño,1
+2023-11-01,Sto. Niño,2
+2023-12-01,Sto. Niño,0
+2023-01-01,Zone II,0
+2023-02-01,Zone II,0
+2023-03-01,Zone II,1
+2023-04-01,Zone II,1
+2023-05-01,Zone II,5
+2023-06-01,Zone II,3
+2023-07-01,Zone II,3
+2023-08-01,Zone II,6
+2023-09-01,Zone II,4
+2023-10-01,Zone II,1
+2023-11-01,Zone II,2
+2023-12-01,Zone II,0
+2024-01-01,General Paulino Santos,9
+2024-02-01,General Paulino Santos,3
+2024-03-01,General Paulino Santos,6
+2024-04-01,General Paulino Santos,2
+2024-05-01,General Paulino Santos,9
+2024-06-01,General Paulino Santos,24
+2024-07-01,General Paulino Santos,34
+2024-08-01,General Paulino Santos,41
+2024-09-01,General Paulino Santos,20
+2024-10-01,General Paulino Santos,19
+2024-11-01,General Paulino Santos,13
+2024-12-01,General Paulino Santos,0
+2024-01-01,Morales,3
+2024-02-01,Morales,5
+2024-03-01,Morales,6
+2024-04-01,Morales,2
+2024-05-01,Morales,2
+2024-06-01,Morales,12
+2024-07-01,Morales,16
+2024-08-01,Morales,17
+2024-09-01,Morales,12
+2024-10-01,Morales,12
+2024-11-01,Morales,9
+2024-12-01,Morales,7
+2024-01-01,Santa Cruz,4
+2024-02-01,Santa Cruz,6
+2024-03-01,Santa Cruz,6
+2024-04-01,Santa Cruz,2
+2024-05-01,Santa Cruz,0
+2024-06-01,Santa Cruz,6
+2024-07-01,Santa Cruz,18
+2024-08-01,Santa Cruz,24
+2024-09-01,Santa Cruz,26
+2024-10-01,Santa Cruz,25
+2024-11-01,Santa Cruz,12
+2024-12-01,Santa Cruz,10
+2024-01-01,Sto. Niño,3
+2024-02-01,Sto. Niño,2
+2024-03-01,Sto. Niño,2
+2024-04-01,Sto. Niño,0
+2024-05-01,Sto. Niño,2
+2024-06-01,Sto. Niño,3
+2024-07-01,Sto. Niño,6
+2024-08-01,Sto. Niño,8
+2024-09-01,Sto. Niño,5
+2024-10-01,Sto. Niño,4
+2024-11-01,Sto. Niño,4
+2024-12-01,Sto. Niño,0
+2024-01-01,Zone II,2
+2024-02-01,Zone II,2
+2024-03-01,Zone II,2
+2024-04-01,Zone II,2
+2024-05-01,Zone II,2
+2024-06-01,Zone II,2
+2024-07-01,Zone II,3
+2024-08-01,Zone II,6
+2024-09-01,Zone II,8
+2024-10-01,Zone II,5
+2024-11-01,Zone II,4
+2024-12-01,Zone II,4
+2025-01-01,General Paulino Santos,8
+2025-02-01,General Paulino Santos,15
+2025-03-01,General Paulino Santos,22
+2025-04-01,General Paulino Santos,7
+2025-05-01,General Paulino Santos,10
+2025-06-01,General Paulino Santos,13
+2025-07-01,General Paulino Santos,9
+2025-08-01,General Paulino Santos,7
+2025-09-01,General Paulino Santos,5
+2025-01-01,Morales,3
+2025-02-01,Morales,14
+2025-03-01,Morales,16
+2025-04-01,Morales,7
+2025-05-01,Morales,4
+2025-06-01,Morales,5
+2025-07-01,Morales,6
+2025-08-01,Morales,5
+2025-09-01,Morales,11
+2025-01-01,Santa Cruz,17
+2025-02-01,Santa Cruz,12
+2025-03-01,Santa Cruz,10
+2025-04-01,Santa Cruz,3
+2025-05-01,Santa Cruz,2
+2025-06-01,Santa Cruz,13
+2025-07-01,Santa Cruz,9
+2025-08-01,Santa Cruz,8
+2025-09-01,Santa Cruz,4
+2025-01-01,Sto. Niño,4
+2025-02-01,Sto. Niño,4
+2025-03-01,Sto. Niño,2
+2025-04-01,Sto. Niño,1
+2025-05-01,Sto. Niño,1
+2025-06-01,Sto. Niño,0
+2025-07-01,Sto. Niño,2
+2025-08-01,Sto. Niño,9
+2025-09-01,Sto. Niño,1
+2025-01-01,Zone II,4
+2025-02-01,Zone II,4
+2025-03-01,Zone II,2
+2025-04-01,Zone II,2
+2025-05-01,Zone II,1
+2025-06-01,Zone II,0
+2025-07-01,Zone II,2
+2025-08-01,Zone II,0
+2025-09-01,Zone II,0
