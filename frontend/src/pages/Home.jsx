@@ -80,6 +80,13 @@ const Home = () => {
             Learn More About Dengue
           </Link>
         </div>
+
+        {/* Important Warning */}
+        <div className="mt-12 text-center bg-red-50 rounded-xl p-6 border-2 border-red-300 animate-slide-up">
+          <p className="text-lg font-semibold text-red-900 leading-relaxed">
+            ⚠️ Dengue is dangerous and can be fatal if not addressed immediately. When left untreated, it can lead to internal bleeding, shock, and other severe complications.
+          </p>
+        </div>
       </div>
     </div>
   )

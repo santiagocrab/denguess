@@ -204,11 +204,16 @@ const AdminDashboard = () => {
           <p className="text-lg text-gray-600">Upload and manage dengue prediction data</p>
         </div>
 
-        {/* Heatmap Section */}
-        <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-200 mb-8 animate-slide-up">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Dengue Risk Heatmap</h2>
-          <p className="text-gray-600 mb-6">Real-time dengue risk visualization across all barangays in Koronadal City</p>
-          <BarangayHeatmap />
+        {/* Heatmap Section - Prominent Display */}
+        <div className="bg-white rounded-xl p-8 shadow-lg border-2 border-gray-300 mb-8 animate-slide-up">
+          <div className="mb-6">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Dengue Risk Heatmap</h2>
+            <p className="text-gray-600 text-lg">Real-time dengue risk visualization across all barangays in Koronadal City</p>
+            <p className="text-sm text-gray-500 mt-2">Click on any barangay to see detailed risk information</p>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <BarangayHeatmap />
+          </div>
         </div>
 
         {/* Message Alert */}
