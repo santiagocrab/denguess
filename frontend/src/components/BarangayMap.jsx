@@ -2,6 +2,7 @@ import { MapContainer, TileLayer, Polygon, Popup } from 'react-leaflet'
 import { useEffect, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { fetchBarangayBoundaries, getApproximateBoundaries } from '../data/barangayBoundaries'
 
 // Fix for default marker icon in React Leaflet (run once on module load)
 if (typeof window !== 'undefined' && L.Icon && L.Icon.Default) {
@@ -17,38 +18,8 @@ if (typeof window !== 'undefined' && L.Icon && L.Icon.Default) {
   }
 }
 
-// 🗺️ CORRECTED BARANGAY COORDINATES
-const BARANGAY_COORDINATES = {
-  'General Paulino Santos': [6.5050, 124.8473],
-  'Zone II': [6.4960, 124.8531],
-  'Santa Cruz': [6.4743, 124.8398],
-  'Sto. Niño': [6.4938, 124.8681],
-  'Morales': [6.4765, 124.8617],
-}
-
 // Approximate coordinates for Koronadal City center
 const KORONADAL_CENTER = [6.4938, 124.8531]
-
-// Create approximate polygons around centroids (0.01 degree radius ~1km)
-const createPolygonFromCenter = (center, radius = 0.008) => {
-  const [lat, lng] = center
-  return [
-    [lat + radius, lng - radius], // Top-left
-    [lat + radius, lng + radius], // Top-right
-    [lat - radius, lng + radius], // Bottom-right
-    [lat - radius, lng - radius], // Bottom-left
-    [lat + radius, lng - radius], // Close polygon
-  ]
-}
-
-// Simplified polygon boundaries for each barangay
-const BARANGAY_BOUNDARIES = {
-  'General Paulino Santos': createPolygonFromCenter(BARANGAY_COORDINATES['General Paulino Santos']),
-  'Zone II': createPolygonFromCenter(BARANGAY_COORDINATES['Zone II']),
-  'Santa Cruz': createPolygonFromCenter(BARANGAY_COORDINATES['Santa Cruz']),
-  'Sto. Niño': createPolygonFromCenter(BARANGAY_COORDINATES['Sto. Niño']),
-  'Morales': createPolygonFromCenter(BARANGAY_COORDINATES['Morales']),
-}
 
 const getRiskColor = (risk) => {
   switch (risk) {
@@ -64,16 +35,45 @@ const getRiskColor = (risk) => {
 }
 
 const BarangayMap = ({ barangay, currentRisk }) => {
-  const [bounds, setBounds] = useState(BARANGAY_BOUNDARIES[barangay] || BARANGAY_BOUNDARIES['General Paulino Santos'])
+  const [bounds, setBounds] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (BARANGAY_BOUNDARIES[barangay]) {
-      setBounds(BARANGAY_BOUNDARIES[barangay])
+    const loadBoundaries = async () => {
+      try {
+        setLoading(true)
+        const boundaries = await fetchBarangayBoundaries()
+        if (boundaries[barangay]) {
+          setBounds(boundaries[barangay])
+        } else {
+          // Fallback to approximate
+          const approximate = getApproximateBoundaries()
+          setBounds(approximate[barangay] || approximate['General Paulino Santos'])
+        }
+      } catch (error) {
+        console.error('Error loading boundaries:', error)
+        const approximate = getApproximateBoundaries()
+        setBounds(approximate[barangay] || approximate['General Paulino Santos'])
+      } finally {
+        setLoading(false)
+      }
     }
+    loadBoundaries()
   }, [barangay])
 
   const fillColor = getRiskColor(currentRisk)
   const fillOpacity = 0.5
+
+  if (loading || !bounds) {
+    return (
+      <div className="w-full h-96 rounded-lg overflow-hidden shadow-lg border-2 border-gray-200 bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-red-600 border-t-transparent mb-2"></div>
+          <p className="text-gray-600">Loading map...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="w-full h-96 rounded-lg overflow-hidden shadow-lg border-2 border-gray-200">

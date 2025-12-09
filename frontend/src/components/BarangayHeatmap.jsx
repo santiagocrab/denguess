@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { getAllBarangayPredictions } from '../services/api'
+import { fetchBarangayBoundaries, getBarangayCentroids } from '../data/barangayBoundaries'
 
 // Fix for default marker icon in React Leaflet
 if (typeof window !== 'undefined' && L.Icon && L.Icon.Default) {
@@ -21,36 +22,14 @@ if (typeof window !== 'undefined' && L.Icon && L.Icon.Default) {
 // Koronadal City center coordinates
 const KORONADAL_CENTER = [6.4938, 124.8531]
 
-// 🗺️ CORRECTED BARANGAY COORDINATES
-// Centroids for each barangay in Koronadal City
-const BARANGAY_COORDINATES = {
-  'General Paulino Santos': [6.5050, 124.8473],
-  'Zone II': [6.4960, 124.8531],
-  'Santa Cruz': [6.4743, 124.8398],
-  'Sto. Niño': [6.4938, 124.8681],
-  'Morales': [6.4765, 124.8617],
-}
-
-// Create approximate polygons around centroids (0.01 degree radius ~1km)
-const createPolygonFromCenter = (center, radius = 0.008) => {
-  const [lat, lng] = center
-  return [
-    [lat + radius, lng - radius], // Top-left
-    [lat + radius, lng + radius], // Top-right
-    [lat - radius, lng + radius], // Bottom-right
-    [lat - radius, lng - radius], // Bottom-left
-    [lat + radius, lng - radius], // Close polygon
-  ]
-}
-
-// Barangay boundaries (created from centroids)
-const BARANGAY_BOUNDARIES = {
-  'General Paulino Santos': createPolygonFromCenter(BARANGAY_COORDINATES['General Paulino Santos']),
-  'Zone II': createPolygonFromCenter(BARANGAY_COORDINATES['Zone II']),
-  'Santa Cruz': createPolygonFromCenter(BARANGAY_COORDINATES['Santa Cruz']),
-  'Sto. Niño': createPolygonFromCenter(BARANGAY_COORDINATES['Sto. Niño']),
-  'Morales': createPolygonFromCenter(BARANGAY_COORDINATES['Morales']),
-}
+// Barangay names
+const BARANGAY_NAMES = [
+  'General Paulino Santos',
+  'Zone II',
+  'Santa Cruz',
+  'Sto. Niño',
+  'Morales',
+]
 
 const getRiskColor = (risk) => {
   switch (risk) {
@@ -80,11 +59,29 @@ const getRiskOpacity = (risk) => {
 
 const BarangayHeatmap = () => {
   const [barangayRisks, setBarangayRisks] = useState({})
+  const [barangayBoundaries, setBarangayBoundaries] = useState({})
   const [loading, setLoading] = useState(true)
+  const [loadingBoundaries, setLoadingBoundaries] = useState(true)
 
   useEffect(() => {
     fetchAllPredictions()
+    fetchBoundaries()
   }, [])
+
+  const fetchBoundaries = async () => {
+    try {
+      setLoadingBoundaries(true)
+      const boundaries = await fetchBarangayBoundaries()
+      setBarangayBoundaries(boundaries)
+    } catch (error) {
+      console.error('Error fetching boundaries:', error)
+      // Fallback to approximate boundaries
+      const { getApproximateBoundaries } = await import('../data/barangayBoundaries')
+      setBarangayBoundaries(getApproximateBoundaries())
+    } finally {
+      setLoadingBoundaries(false)
+    }
+  }
 
   const fetchAllPredictions = async () => {
     try {
@@ -111,11 +108,13 @@ const BarangayHeatmap = () => {
 
   return (
     <div className="w-full h-[600px] rounded-lg overflow-hidden shadow-lg border-2 border-gray-200">
-      {loading ? (
+      {(loading || loadingBoundaries) ? (
         <div className="w-full h-full flex items-center justify-center bg-gray-50">
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-red-600 border-t-transparent mb-4"></div>
-            <p className="text-gray-600 font-semibold">Loading heatmap...</p>
+            <p className="text-gray-600 font-semibold">
+              {loadingBoundaries ? 'Loading barangay boundaries...' : 'Loading heatmap...'}
+            </p>
           </div>
         </div>
       ) : (
@@ -128,15 +127,20 @@ const BarangayHeatmap = () => {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          {Object.keys(BARANGAY_BOUNDARIES).map((barangay) => {
+          {BARANGAY_NAMES.map((barangay) => {
             const risk = barangayRisks[barangay] || 'Unknown'
             const fillColor = getRiskColor(risk)
             const fillOpacity = getRiskOpacity(risk)
+            const boundaries = barangayBoundaries[barangay]
+            
+            if (!boundaries || boundaries.length === 0) {
+              return null
+            }
             
             return (
               <Polygon
                 key={barangay}
-                positions={BARANGAY_BOUNDARIES[barangay]}
+                positions={boundaries}
                 pathOptions={{
                   color: fillColor,
                   fillColor: fillColor,
