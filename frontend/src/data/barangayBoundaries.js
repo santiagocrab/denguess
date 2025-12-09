@@ -69,18 +69,41 @@ const processOverpassData = (data) => {
         const name = element.tags?.name
         if (name && BARANGAY_CENTROIDS[name]) {
           // Extract polygon coordinates from relation members
-          const coordinates = []
-          element.members.forEach((member) => {
+          // Relations contain ways, and ways contain nodes with geometry
+          const allCoordinates = []
+          
+          // Sort members by role to get outer boundary first
+          const outerMembers = element.members.filter(m => 
+            !m.role || m.role === 'outer' || m.role === ''
+          )
+          
+          outerMembers.forEach((member) => {
             if (member.type === 'way' && member.geometry) {
               const wayCoords = member.geometry.map((point) => [point.lat, point.lon])
-              coordinates.push(...wayCoords)
+              allCoordinates.push(...wayCoords)
             }
           })
           
-          if (coordinates.length > 0) {
-            // Close the polygon
-            coordinates.push(coordinates[0])
-            boundaries[name] = coordinates
+          if (allCoordinates.length > 0) {
+            // Remove duplicates and close the polygon
+            const uniqueCoords = []
+            const seen = new Set()
+            allCoordinates.forEach(coord => {
+              const key = `${coord[0]},${coord[1]}`
+              if (!seen.has(key)) {
+                seen.add(key)
+                uniqueCoords.push(coord)
+              }
+            })
+            
+            // Close polygon if not already closed
+            if (uniqueCoords.length > 0 && 
+                (uniqueCoords[0][0] !== uniqueCoords[uniqueCoords.length - 1][0] ||
+                 uniqueCoords[0][1] !== uniqueCoords[uniqueCoords.length - 1][1])) {
+              uniqueCoords.push(uniqueCoords[0])
+            }
+            
+            boundaries[name] = uniqueCoords
           }
         }
       }
