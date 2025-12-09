@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import api from '../services/api'
+import { getInsights } from '../services/api'
 
 const AIInsightCard = () => {
   const [insight, setInsight] = useState(null)
@@ -8,9 +8,11 @@ const AIInsightCard = () => {
   useEffect(() => {
     const fetchInsight = async () => {
       try {
-        const response = await api.get('/insights')
-        if (response.data.insights && response.data.insights.length > 0) {
-          setInsight(response.data.insights[0])
+        const data = await getInsights()
+        if (data.insights && data.insights.length > 0) {
+          setInsight(data.insights[0])
+        } else {
+          setInsight('🌡️ Current weather conditions are being monitored for dengue risk assessment.')
         }
       } catch (error) {
         console.error('Error fetching insights:', error)
