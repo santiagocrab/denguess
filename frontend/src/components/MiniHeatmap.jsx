@@ -2,8 +2,8 @@ import { MapContainer, TileLayer, Polygon, Popup } from 'react-leaflet'
 import { useEffect, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { fetchBarangayBoundaries, getBarangayCentroids } from '../data/barangayBoundaries'
-import { getCurrentWeather } from '../services/weather'
+import { fetchBarangayBoundaries } from '../data/barangayBoundaries'
+import { getAllBarangayPredictions } from '../services/api'
 
 // Fix for default marker icon
 if (typeof window !== 'undefined' && L.Icon && L.Icon.Default) {
@@ -20,54 +20,82 @@ if (typeof window !== 'undefined' && L.Icon && L.Icon.Default) {
 const KORONADAL_CENTER = [6.4938, 124.8531]
 const BARANGAY_NAMES = ['General Paulino Santos', 'Zone II', 'Santa Cruz', 'Sto. Niño', 'Morales']
 
-const getRiskFromWeather = (weather) => {
-  if (!weather) return 'moderate'
-  if (weather.rainfall > 50 || weather.humidity > 85) return 'high'
-  if (weather.rainfall > 20 || weather.humidity > 75) return 'moderate'
-  return 'low'
-}
-
 const getRiskColor = (risk) => {
   switch (risk) {
-    case 'high': return '#ef4444'
-    case 'moderate': return '#f59e0b'
-    case 'low': return '#10b981'
-    default: return '#6b7280'
+    case 'High':
+      return '#ef4444' // red-500
+    case 'Moderate':
+      return '#f59e0b' // amber-500
+    case 'Low':
+      return '#10b981' // emerald-500
+    default:
+      return '#6b7280' // gray-500
   }
 }
 
 const MiniHeatmap = () => {
   const [boundaries, setBoundaries] = useState({})
-  const [weather, setWeather] = useState(null)
+  const [barangayRisks, setBarangayRisks] = useState({})
   const [loading, setLoading] = useState(true)
+  const [loadingBoundaries, setLoadingBoundaries] = useState(true)
+
+  const fetchBoundaries = async () => {
+    try {
+      setLoadingBoundaries(true)
+      const bounds = await fetchBarangayBoundaries()
+      setBoundaries(bounds)
+    } catch (error) {
+      console.error('Error fetching boundaries:', error)
+      const { getApproximateBoundaries } = await import('../data/barangayBoundaries')
+      setBoundaries(getApproximateBoundaries())
+    } finally {
+      setLoadingBoundaries(false)
+    }
+  }
+
+  const fetchAllPredictions = async () => {
+    try {
+      setLoading(true)
+      // Use the same prediction API as barangay pages and admin dashboard
+      const predictions = await getAllBarangayPredictions()
+      const risks = {}
+      
+      // Get current week's risk for each barangay from ML model predictions
+      Object.keys(predictions).forEach(barangay => {
+        if (predictions[barangay].full_forecast && predictions[barangay].full_forecast.length > 0) {
+          risks[barangay] = predictions[barangay].full_forecast[0].risk
+        } else {
+          risks[barangay] = 'Unknown'
+        }
+      })
+      
+      setBarangayRisks(risks)
+    } catch (error) {
+      console.error('Error fetching predictions:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [bounds, currentWeather] = await Promise.all([
-          fetchBarangayBoundaries(),
-          getCurrentWeather()
-        ])
-        setBoundaries(bounds)
-        setWeather(currentWeather)
-      } catch (error) {
-        console.error('Error loading heatmap data:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-    loadData()
+    fetchAllPredictions()
+    fetchBoundaries()
+    
+    // Refresh predictions every 5 minutes (same as barangay pages)
+    const interval = setInterval(() => {
+      fetchAllPredictions()
+    }, 300000)
+
+    return () => clearInterval(interval)
   }, [])
 
-  if (loading) {
+  if (loading || loadingBoundaries) {
     return (
       <div className="bg-white rounded-xl p-4 shadow-lg border-2 border-gray-200 h-64 flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-4 border-red-600 border-t-transparent"></div>
       </div>
     )
   }
-
-  const riskLevel = getRiskFromWeather(weather)
 
   return (
     <div className="bg-white rounded-xl p-4 shadow-lg border-2 border-gray-200 animate-slide-up">
@@ -87,8 +115,10 @@ const MiniHeatmap = () => {
             const boundary = boundaries[barangay]
             if (!boundary) return null
             
-            const risk = getRiskFromWeather(weather)
+            // Use actual ML model prediction (same as barangay pages)
+            const risk = barangayRisks[barangay] || 'Unknown'
             const color = getRiskColor(risk)
+            const opacity = risk === 'High' ? 0.7 : risk === 'Moderate' ? 0.5 : 0.3
             
             return (
               <Polygon
@@ -97,27 +127,24 @@ const MiniHeatmap = () => {
                 pathOptions={{
                   color: color,
                   fillColor: color,
-                  fillOpacity: 0.3,
+                  fillOpacity: opacity,
                   weight: 2,
                 }}
               >
                 <Popup>
                   <div className="p-2">
                     <h4 className="font-bold text-sm mb-2">{barangay}</h4>
-                    {weather && (
-                      <div className="text-xs space-y-1">
-                        <div>🌡️ Temp: {weather.temperature}°C</div>
-                        <div>💧 Humidity: {weather.humidity}%</div>
-                        <div>🌧️ Rain: {weather.rainfall}mm</div>
-                        <div className={`mt-2 px-2 py-1 rounded text-xs font-semibold ${
-                          risk === 'high' ? 'bg-red-100 text-red-800' :
-                          risk === 'moderate' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-green-100 text-green-800'
-                        }`}>
-                          {risk === 'high' ? '⚠️ High Risk' : risk === 'moderate' ? '⚠️ Moderate Risk' : '✅ Low Risk'}
-                        </div>
-                      </div>
-                    )}
+                    <div className={`mt-2 px-2 py-1 rounded text-xs font-semibold ${
+                      risk === 'High' ? 'bg-red-100 text-red-800' :
+                      risk === 'Moderate' ? 'bg-yellow-100 text-yellow-800' :
+                      risk === 'Low' ? 'bg-green-100 text-green-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {risk === 'High' ? '🔴 High Risk' : risk === 'Moderate' ? '🟡 Moderate Risk' : risk === 'Low' ? '🟢 Low Risk' : '⚪ Unknown'}
+                    </div>
+                    <p className="text-xs text-gray-600 mt-2">
+                      Based on ML model prediction
+                    </p>
                   </div>
                 </Popup>
               </Polygon>
