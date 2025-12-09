@@ -1,19 +1,71 @@
 import { Link } from 'react-router-dom'
 import { getBarangays } from '../services/api'
 import { useState, useEffect } from 'react'
+import WeatherCard from '../components/WeatherCard'
+import MiniHeatmap from '../components/MiniHeatmap'
+import AIInsightCard from '../components/AIInsightCard'
+import AnalyticsCards from '../components/AnalyticsCards'
+import ForecastSlider from '../components/ForecastSlider'
+import TipsCarousel from '../components/TipsCarousel'
+import { getCurrentWeather } from '../services/weather'
 
 const Home = () => {
   const [barangays, setBarangays] = useState([])
+  const [weather, setWeather] = useState(null)
+  const [lastUpdate, setLastUpdate] = useState(null)
+  const [theme, setTheme] = useState('default')
 
   useEffect(() => {
     getBarangays().then(setBarangays).catch(console.error)
+    
+    // Load weather for theming
+    getCurrentWeather().then((data) => {
+      setWeather(data)
+      setLastUpdate(new Date())
+      
+      // Set theme based on weather
+      if (data.condition === 'Rain' || data.rainfall > 20) {
+        setTheme('rainy')
+      } else if (data.condition === 'Clear' && data.temperature > 30) {
+        setTheme('sunny')
+      } else if (data.condition === 'Clouds') {
+        setTheme('cloudy')
+      } else {
+        setTheme('default')
+      }
+    })
   }, [])
 
+  const handleRefresh = async () => {
+    const data = await getCurrentWeather()
+    setWeather(data)
+    setLastUpdate(new Date())
+  }
+
+  const formatTime = (date) => {
+    if (!date) return ''
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+  }
+
+  // Theme-based background gradients
+  const getThemeGradient = () => {
+    switch (theme) {
+      case 'sunny':
+        return 'bg-gradient-to-b from-yellow-50 via-orange-50 to-white'
+      case 'rainy':
+        return 'bg-gradient-to-b from-blue-50 via-gray-50 to-white'
+      case 'cloudy':
+        return 'bg-gradient-to-b from-gray-50 to-white'
+      default:
+        return 'bg-gradient-to-b from-gray-50 to-white'
+    }
+  }
+
   return (
-    <div className="min-h-screen pt-20 bg-gradient-to-b from-gray-50 to-white animate-fade-in">
+    <div className={`min-h-screen pt-20 ${getThemeGradient()} animate-fade-in transition-colors duration-500`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Hero Section */}
-        <div className="text-center mb-16 animate-slide-up">
+        <div className="text-center mb-12 animate-slide-up">
           <div className="flex items-center justify-center gap-4 mb-6">
             <img 
               src="/logo.png" 
@@ -24,6 +76,48 @@ const Home = () => {
               Denguess
             </h1>
           </div>
+        </div>
+
+        {/* Top Row: Weather Card and AI Insight */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <WeatherCard />
+          <AIInsightCard />
+        </div>
+
+        {/* Analytics Cards */}
+        <AnalyticsCards />
+
+        {/* Interactive Heatmap */}
+        <div className="mb-6">
+          <MiniHeatmap />
+        </div>
+
+        {/* 7-Day Forecast */}
+        <div className="mb-6">
+          <ForecastSlider />
+        </div>
+
+        {/* Last Updated + Refresh Button */}
+        <div className="flex items-center justify-between mb-6 bg-white rounded-xl p-4 shadow-lg border-2 border-gray-200">
+          <div className="text-sm text-gray-600">
+            {lastUpdate ? (
+              <>Last updated: <span className="font-semibold">{formatTime(lastUpdate)}</span></>
+            ) : (
+              'Loading...'
+            )}
+          </div>
+          <button
+            onClick={handleRefresh}
+            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-all transform hover:scale-105"
+          >
+            <span>🔄</span>
+            <span>Refresh</span>
+          </button>
+        </div>
+
+        {/* Did You Know Carousel */}
+        <div className="mb-12">
+          <TipsCarousel />
         </div>
 
         {/* Barangays Grid */}

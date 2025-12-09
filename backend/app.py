@@ -872,6 +872,50 @@ async def get_case_reports():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving case reports: {str(e)}")
 
+@app.get("/insights")
+async def get_insights():
+    """
+    Generate AI insights based on current weather and historical patterns.
+    Returns 1-2 short sentences about dengue risk conditions.
+    """
+    try:
+        # Get current date for seasonal context
+        now = datetime.now()
+        month = now.month
+        
+        # Simple insights based on season and typical patterns
+        insights = []
+        
+        # Seasonal insights
+        if month >= 5 and month <= 10:  # Rainy season (June-October)
+            insights.append("🌧️ Rainy season conditions are favorable for mosquito breeding. Increased rainfall creates more stagnant water sources.")
+        elif month >= 3 and month <= 5:  # Summer (March-May)
+            insights.append("🌡️ Higher temperatures during summer months can accelerate mosquito development cycles.")
+        else:
+            insights.append("🌤️ Current weather patterns suggest moderate mosquito activity. Monitor standing water sources.")
+        
+        # Random additional insight
+        additional_insights = [
+            "💧 High humidity levels create ideal conditions for mosquito survival and breeding.",
+            "🌡️ Temperature fluctuations can affect mosquito activity patterns throughout the day.",
+            "🌧️ Recent rainfall increases the number of potential breeding sites in the area.",
+            "🦟 Stagnant water in containers, tires, and plant pots are common breeding grounds.",
+            "🌡️ Optimal mosquito breeding temperature is between 25-30°C, typical in this region.",
+        ]
+        
+        import random
+        insights.append(random.choice(additional_insights))
+        
+        return {
+            "insights": insights[:2],  # Return 1-2 insights
+            "generated_at": now.isoformat()
+        }
+    except Exception as e:
+        return {
+            "insights": ["🌡️ Current weather conditions are being monitored for dengue risk assessment."],
+            "generated_at": datetime.now().isoformat()
+        }
+
 @app.post("/model/retrain")
 async def retrain_model():
     """

@@ -109,6 +109,11 @@ export const getWeeklyPredictions = async (barangay, startDate) => {
   }
 }
 
+export const getInsights = async () => {
+  const response = await api.get('/insights')
+  return response.data
+}
+
 export const getAllBarangayPredictions = async () => {
   try {
     const barangays = await getBarangays()
