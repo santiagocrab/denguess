@@ -63,11 +63,6 @@ const BarangayHeatmap = () => {
   const [loading, setLoading] = useState(true)
   const [loadingBoundaries, setLoadingBoundaries] = useState(true)
 
-  useEffect(() => {
-    fetchAllPredictions()
-    fetchBoundaries()
-  }, [])
-
   const fetchBoundaries = async () => {
     try {
       setLoadingBoundaries(true)
@@ -107,8 +102,11 @@ const BarangayHeatmap = () => {
     }
   }
 
-  // Refresh predictions when weather updates (every 5 minutes like barangay pages)
   useEffect(() => {
+    fetchAllPredictions()
+    fetchBoundaries()
+    
+    // Refresh predictions when weather updates (every 5 minutes like barangay pages)
     const interval = setInterval(() => {
       fetchAllPredictions()
     }, 300000) // 5 minutes, same as barangay pages
