@@ -8,4 +8,7 @@ services:
       - key: PYTHON_VERSION
         value: 3.9.18
     plan: free
-
+    # Health check endpoint
+    healthCheckPath: /health
+    # Auto-deploy from main branch
+    autoDeploy: true
