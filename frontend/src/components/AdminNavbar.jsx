@@ -10,8 +10,12 @@ const AdminNavbar = () => {
         <div className="flex justify-between items-center h-20">
           <div className="flex items-center space-x-3">
             <Link to="/admin" className="flex items-center space-x-3 group">
-              <div className="bg-red-600 p-2 rounded-lg">
-                <span className="text-2xl">⚙️</span>
+              <div className="bg-red-600 p-2 rounded-lg shadow-md group-hover:shadow-lg transition-shadow">
+                <img 
+                  src="/logo.png" 
+                  alt="Denguess Logo" 
+                  className="w-8 h-8 object-contain"
+                />
               </div>
               <div>
                 <span className="text-xl font-bold text-gray-900">Admin Panel</span>

@@ -56,14 +56,13 @@ Your local repository is ready! Follow these steps to upload to GitHub.
 
 **Open your terminal** and run these commands:
 
-### Replace `YOUR_USERNAME` with your GitHub username
+### Replace `santiagocrab` with your GitHub username
 
 ```bash
 cd /Users/jamesremegio/Documents/dengue_rf_model
 
 # Add GitHub as remote (use HTTPS)
-git remote add origin https://github.com/YOUR_USERNAME/dengue_rf_model.git
-
+git remote add origin https://github.com/santiagocrab/denguess.git
 # Or use SSH if you have SSH keys set up:
 # git remote add origin git@github.com:YOUR_USERNAME/dengue_rf_model.git
 

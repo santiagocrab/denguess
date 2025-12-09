@@ -37,6 +37,15 @@
     animation: float 6s ease-in-out infinite;
   }
   
+  .logo-hover {
+    transition: all 0.3s ease-in-out;
+  }
+  
+  .logo-hover:hover {
+    transform: scale(1.1) rotate(5deg);
+    filter: drop-shadow(0 4px 8px rgba(220, 38, 38, 0.3));
+  }
+  
   .animate-pulse-slow {
     animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
@@ -78,7 +87,7 @@
 
 @keyframes glow {
   from {
-    box-shadow: 0 0 20px rgba(220, 38, 38, 0.3), 0 0 40px rgba(220, 38, 38, 0.2);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3), 0 0 40px rgba(59, 130, 246, 0.2);
   }
   to {
     box-shadow: 0 0 30px rgba(220, 38, 38, 0.5), 0 0 60px rgba(220, 38, 38, 0.3);

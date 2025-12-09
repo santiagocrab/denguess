@@ -57,16 +57,22 @@ const LoadingScreen = ({ onComplete }) => {
         <div className="mb-8 animate-float">
           <div className="relative">
             <div className="absolute inset-0 bg-white/20 rounded-full blur-2xl animate-pulse"></div>
-            <div className="relative bg-white p-8 rounded-full shadow-2xl">
-              <span className="text-6xl">🦟</span>
+            <div className="relative bg-white p-6 md:p-8 rounded-full shadow-2xl">
+              <img 
+                src="/logo.png" 
+                alt="Denguess Logo" 
+                className="w-16 h-16 md:w-24 md:h-24 object-contain"
+              />
             </div>
           </div>
         </div>
 
         {/* Title */}
-        <h1 className="text-6xl md:text-8xl font-black text-white mb-4 tracking-tight">
-          Denguess
-        </h1>
+        <div className="flex items-center justify-center gap-4 mb-4">
+          <h1 className="text-6xl md:text-8xl font-black text-white tracking-tight">
+            Denguess
+          </h1>
+        </div>
         <p className="text-xl md:text-2xl text-red-100 mb-8 font-semibold">
           AI-Powered Dengue Prediction{dots}
         </p>

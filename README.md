@@ -146,6 +146,9 @@ The frontend will be available at `http://localhost:3000`
 - `POST /upload/dengue` - Upload dengue cases CSV
 - `GET /uploads` - List all uploaded files
 
+### Model Management
+- `POST /model/retrain` - Retrain the Random Forest model with latest data
+
 ### Case Reporting
 - `POST /report-case?barangay=...&date=...&symptoms=...` - Report dengue case/symptoms
 
@@ -155,7 +158,7 @@ The frontend will be available at `http://localhost:3000`
 ## 🎯 Features
 
 ### Public Pages
-- **Home**: Overview of all barangays
+- **Home**: Overview of all barangays with **interactive heatmap visualization**
 - **Barangay Pages**: Individual pages for each of the 5 barangays:
   - General Paulino Santos
   - Morales
@@ -165,17 +168,27 @@ The frontend will be available at `http://localhost:3000`
 - **Information Desk**: Dengue prevention tips, symptoms, and emergency contacts
 
 ### Admin Dashboard
-- Upload climate data CSV files
-- Upload dengue cases CSV files
-- View upload history
-- Trigger predictions
+- **CSV File Upload**: Upload monthly climate and dengue cases data
+- **Auto-Retrain Toggle**: Automatically retrain model after uploads
+- **Manual Retrain**: Trigger model retraining on demand
+- **Upload History**: View all uploaded files with timestamps
+- **Real-time Status**: See retraining progress and results
 
 ### Barangay Pages Include:
-- Interactive map with risk visualization
-- Weekly dengue risk forecast (4 weeks)
-- Climate parameter controls
-- Anonymous case reporting form
-- Risk level legend
+- **Interactive Map**: Risk visualization with color-coded heatmap
+- **Weekly Forecast**: 4-week dengue risk prediction with **date ranges**
+- **Chart Visualizations**: Line, Bar, and Doughnut charts (Chart.js)
+- **Climate Parameters**: Real-time weather data integration
+- **Case Reporting**: Anonymous case/symptom reporting form
+- **Risk Legend**: Visual guide for risk levels
+
+### New Features (Latest Update)
+- ✅ **Barangay Heatmap**: View all 5 barangays on one map with risk colors
+- ✅ **Auto-Retrain**: Automatic model retraining after data uploads
+- ✅ **Chart.js Integration**: Animated graphs for risk trends
+- ✅ **Enhanced Predictions**: Weekly predictions with specific date ranges
+- ✅ **Risk Legend Component**: Reusable visual risk indicator
+- ✅ **Improved API**: Enhanced prediction endpoints with formatted responses
 
 ## 📊 Risk Levels
 
@@ -234,6 +247,12 @@ The FastAPI app can be deployed using:
 3. **Port conflicts**: Change ports in `vite.config.js` (frontend) or `app.py` (backend).
 
 4. **Missing dependencies**: Run `pip install -r requirements.txt` (backend) and `npm install` (frontend).
+
+## 📚 Documentation
+
+- **Features Documentation**: See `FEATURES_DOCUMENTATION.md` for detailed information about new features
+- **Deployment Guide**: See `DEPLOYMENT_GUIDE.md` for production deployment instructions
+- **Technical Writeup**: See `TECHNICAL_WRITEUP.md` for technical details
 
 ## 📄 License
 

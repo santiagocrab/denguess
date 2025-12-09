@@ -1,14 +1,14 @@
-# Technical System Design: Machine Learning-Based Dengue Outbreak Prediction System
+Technical System Design: Machine Learning-Based Dengue Outbreak Prediction System
 
-## Abstract
+Abstract
 
 This document provides a comprehensive technical overview of the Denguess system, a full-stack web application that employs a Random Forest Classifier to predict dengue outbreak risk levels for barangays in Koronadal City, Philippines. The system integrates machine learning inference with a modern web interface to deliver real-time, location-specific dengue risk forecasts based on climate parameters.
 
 ---
 
-## I. API Architecture
+I. API Architecture
 
-### 1.1 Technology Stack
+1.1 Technology Stack
 
 The API layer is implemented using **FastAPI** (version 0.104.1), a modern, high-performance Python web framework built on Starlette and Pydantic. FastAPI was selected for its automatic API documentation generation, type validation through Pydantic models, and asynchronous request handling capabilities.
 
@@ -158,7 +158,7 @@ The frontend is built using **React 18.2.0** with **Vite 5.0.8** as the build to
 - `tailwindcss@^3.3.6` - Utility-first CSS framework
 
 ### 2.2 Component Architecture
-
+x
 #### 2.2.1 Admin Upload Interface
 
 **Component**: `AdminDashboard.jsx`

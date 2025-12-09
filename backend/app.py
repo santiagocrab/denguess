@@ -3,6 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import List, Optional
+from contextlib import asynccontextmanager
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 import joblib
 import pandas as pd
 import numpy as np
@@ -14,7 +17,31 @@ import warnings
 # Suppress sklearn version warnings
 warnings.filterwarnings('ignore', category=UserWarning)
 
-app = FastAPI(title="Denguess API", version="1.0.0", description="AI-Powered Dengue Prediction System")
+# Optimized lifespan - preload model at startup for faster responses
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("🚀 Starting Denguess API...")
+    print("📦 Pre-loading model for faster responses...")
+    # Preload model synchronously at startup
+    try:
+        load_model()
+        load_historical_climate()
+        if model is not None:
+            print("✅ Model pre-loaded successfully!")
+        else:
+            print("⚠️  Model will load on first request")
+    except Exception as e:
+        print(f"⚠️  Model pre-load failed: {e}")
+        print("⚠️  Model will load on first request")
+    yield
+    print("👋 Shutting down Denguess API...")
+
+app = FastAPI(
+    title="Denguess API", 
+    version="1.0.0", 
+    description="AI-Powered Dengue Prediction System",
+    lifespan=lifespan
+)
 
 # CORS middleware
 # Allow all origins in production (you can restrict this to specific domains)
@@ -114,8 +141,15 @@ def load_model():
     global model, barangay_encoder
     if model is None and MODEL_PATH.exists():
         try:
+            import time
+            start_time = time.time()
+            print(f"📦 Loading model from {MODEL_PATH}...")
+            
+            # Try loading with timeout protection
             model = joblib.load(MODEL_PATH)
-            print(f"✅ Model loaded successfully!")
+            
+            load_time = time.time() - start_time
+            print(f"✅ Model loaded successfully in {load_time:.2f} seconds!")
             print(f"   Model type: {type(model).__name__}")
             if hasattr(model, 'n_estimators'):
                 print(f"   Number of trees: {model.n_estimators}")
@@ -126,7 +160,8 @@ def load_model():
             if ENCODER_PATH.exists():
                 barangay_encoder = joblib.load(ENCODER_PATH)
                 print(f"✅ Barangay encoder loaded!")
-                print(f"   Barangays: {list(barangay_encoder.classes_)}")
+                if hasattr(barangay_encoder, 'classes_'):
+                    print(f"   Barangays: {list(barangay_encoder.classes_)}")
             else:
                 print(f"⚠️  Barangay encoder not found - using fallback")
             
@@ -141,14 +176,7 @@ def load_model():
             return None
     return model
 
-# Initialize model on startup
-@app.on_event("startup")
-async def startup_event():
-    model = load_model()
-    if model is None:
-        print("⚠️  WARNING: Model not loaded! Predictions will fail.")
-    else:
-        print("🚀 Denguess API ready!")
+# Model is loaded during startup via lifespan context manager
 
 # Request/Response models
 class ClimateInput(BaseModel):
@@ -177,6 +205,38 @@ class WeeklyForecast(BaseModel):
 class PredictionResponse(BaseModel):
     weekly_forecast: List[WeeklyForecast]
     model_info: Optional[dict] = None
+
+class CaseReport(BaseModel):
+    barangay: str
+    # Patient Details
+    name: str
+    age: str
+    sex: str
+    address: str
+    # Report Information
+    dateReported: str
+    timeReported: str
+    reportedBy: str
+    # Presenting Symptoms
+    fever: bool = False
+    headache: bool = False
+    musclePain: bool = False
+    rash: bool = False
+    nausea: bool = False
+    abdominalPain: bool = False
+    bleeding: bool = False
+    # Symptom Onset
+    symptomOnsetDate: Optional[str] = None
+    # Risk Classification
+    riskRed: bool = False
+    riskYellow: bool = False
+    riskGreen: bool = False
+    # Action Taken
+    referredToFacility: bool = False
+    advisedMonitoring: bool = False
+    notifiedFamily: bool = False
+    # Remarks
+    remarks: Optional[str] = None
 
 # Barangay list
 BARANGAYS = [
@@ -258,6 +318,25 @@ async def root():
         "message": "Denguess API - AI-Powered Dengue Prediction",
         "status": "running",
         "model_loaded": model is not None
+    }
+
+@app.get("/")
+async def root():
+    """Health check endpoint"""
+    return {
+        "status": "ok",
+        "message": "Denguess API is running",
+        "model_loaded": model is not None,
+        "version": "1.0.0"
+    }
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for monitoring"""
+    return {
+        "status": "healthy",
+        "model_loaded": model is not None,
+        "timestamp": datetime.now().isoformat()
     }
 
 @app.get("/barangays")
@@ -411,6 +490,53 @@ async def predict_batch(requests: List[PredictionRequest]):
             })
     return {"results": results}
 
+@app.get("/predict/weekly/{barangay}")
+async def get_weekly_predictions(barangay: str, start_date: str = Query(..., description="Start date in YYYY-MM-DD format")):
+    """
+    Get weekly predictions in the requested format:
+    {
+      "barangay": "Zone 2",
+      "weekly_predictions": {
+        "2025-12-01": "Low",
+        "2025-12-08": "Moderate",
+        "2025-12-15": "High",
+        "2025-12-22": "High"
+      }
+    }
+    """
+    try:
+        # Use default climate data (can be enhanced to use current weather)
+        climate_input = ClimateInput(
+            temperature=28.0,
+            humidity=75.0,
+            rainfall=100.0
+        )
+        
+        request = PredictionRequest(
+            barangay=barangay,
+            climate=climate_input,
+            date=start_date
+        )
+        
+        response = await predict(request)
+        
+        # Transform to requested format
+        weekly_predictions = {}
+        start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+        
+        for week_num, week_forecast in enumerate(response.weekly_forecast):
+            week_start = start_dt + timedelta(weeks=week_num)
+            date_key = week_start.strftime("%Y-%m-%d")
+            weekly_predictions[date_key] = week_forecast.risk
+        
+        return {
+            "barangay": barangay,
+            "weekly_predictions": weekly_predictions
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating weekly predictions: {str(e)}")
+
 @app.post("/predict/test")
 async def test_prediction():
     """Test endpoint to verify model is working correctly"""
@@ -534,19 +660,51 @@ async def list_uploads():
     return {"uploads": files}
 
 @app.post("/report-case")
-async def report_case(
-    barangay: str = Query(..., description="Barangay name"),
-    date: str = Query(..., description="Date of case"),
-    symptoms: Optional[str] = Query(None, description="Symptoms description")
-):
-    """Allow anonymous reporting of dengue cases/symptoms"""
+async def report_case(report: CaseReport):
+    """Allow anonymous reporting of dengue cases/symptoms with detailed patient information"""
     try:
-        # In production, save to database
-        # For now, just log the report
-        report = {
-            "barangay": barangay,
-            "date": date,
-            "symptoms": symptoms,
+        # Convert empty strings to None for optional fields
+        symptom_onset = report.symptomOnsetDate if report.symptomOnsetDate and report.symptomOnsetDate.strip() else None
+        remarks = report.remarks if report.remarks and report.remarks.strip() else None
+        
+        # Prepare report data
+        report_dict = {
+            "barangay": report.barangay,
+            # Patient Details
+            "name": report.name,
+            "age": report.age,
+            "sex": report.sex,
+            "address": report.address,
+            # Report Information
+            "dateReported": report.dateReported,
+            "timeReported": report.timeReported,
+            "reportedBy": report.reportedBy,
+            # Presenting Symptoms
+            "symptoms": {
+                "fever": report.fever,
+                "headache": report.headache,
+                "musclePain": report.musclePain,
+                "rash": report.rash,
+                "nausea": report.nausea,
+                "abdominalPain": report.abdominalPain,
+                "bleeding": report.bleeding,
+            },
+            # Symptom Onset
+            "symptomOnsetDate": symptom_onset,
+            # Risk Classification
+            "riskClassification": {
+                "red": report.riskRed,
+                "yellow": report.riskYellow,
+                "green": report.riskGreen,
+            },
+            # Action Taken
+            "actionTaken": {
+                "referredToFacility": report.referredToFacility,
+                "advisedMonitoring": report.advisedMonitoring,
+                "notifiedFamily": report.notifiedFamily,
+            },
+            # Remarks
+            "remarks": remarks,
             "reported_at": datetime.now().isoformat()
         }
         
@@ -557,15 +715,109 @@ async def report_case(
         
         import json
         with open(reports_file, "a") as f:
-            f.write(json.dumps(report) + "\n")
+            f.write(json.dumps(report_dict) + "\n")
         
         return {
             "message": "Case report submitted successfully",
-            "report": report
+            "report": report_dict
         }
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Report error: {str(e)}")
+
+@app.get("/case-reports")
+async def get_case_reports():
+    """Retrieve all case reports with optional analytics"""
+    try:
+        reports_file = Path(__file__).parent / "data" / "case_reports.jsonl"
+        
+        if not reports_file.exists():
+            return {
+                "reports": [],
+                "analytics": {
+                    "total_reports": 0,
+                    "by_barangay": {},
+                    "by_risk": {"red": 0, "yellow": 0, "green": 0},
+                    "by_symptoms": {},
+                    "by_date": {},
+                    "recent_reports": []
+                }
+            }
+        
+        reports = []
+        import json
+        with open(reports_file, "r") as f:
+            for line in f:
+                if line.strip():
+                    try:
+                        reports.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        continue
+        
+        # Sort by reported_at (most recent first)
+        reports.sort(key=lambda x: x.get("reported_at", ""), reverse=True)
+        
+        # Calculate analytics
+        analytics = {
+            "total_reports": len(reports),
+            "by_barangay": {},
+            "by_risk": {"red": 0, "yellow": 0, "green": 0},
+            "by_symptoms": {
+                "fever": 0,
+                "headache": 0,
+                "musclePain": 0,
+                "rash": 0,
+                "nausea": 0,
+                "abdominalPain": 0,
+                "bleeding": 0
+            },
+            "by_date": {},
+            "by_action": {
+                "referredToFacility": 0,
+                "advisedMonitoring": 0,
+                "notifiedFamily": 0
+            },
+            "recent_reports": reports[:10]  # Last 10 reports
+        }
+        
+        for report in reports:
+            # By barangay
+            barangay = report.get("barangay", "Unknown")
+            analytics["by_barangay"][barangay] = analytics["by_barangay"].get(barangay, 0) + 1
+            
+            # By risk classification
+            risk_class = report.get("riskClassification", {})
+            if risk_class.get("red"):
+                analytics["by_risk"]["red"] += 1
+            elif risk_class.get("yellow"):
+                analytics["by_risk"]["yellow"] += 1
+            elif risk_class.get("green"):
+                analytics["by_risk"]["green"] += 1
+            
+            # By symptoms
+            symptoms = report.get("symptoms", {})
+            for symptom, present in symptoms.items():
+                if present:
+                    analytics["by_symptoms"][symptom] = analytics["by_symptoms"].get(symptom, 0) + 1
+            
+            # By date (date reported)
+            date_reported = report.get("dateReported", "")
+            if date_reported:
+                analytics["by_date"][date_reported] = analytics["by_date"].get(date_reported, 0) + 1
+            
+            # By action taken
+            actions = report.get("actionTaken", {})
+            for action, taken in actions.items():
+                if taken:
+                    analytics["by_action"][action] = analytics["by_action"].get(action, 0) + 1
+        
+        return {
+            "reports": reports,
+            "analytics": analytics
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving case reports: {str(e)}")
 
 @app.post("/model/retrain")
 async def retrain_model():

@@ -23,8 +23,12 @@ const Navbar = () => {
             <Link to="/" className="flex items-center space-x-3 group">
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-red-700 rounded-xl blur opacity-75 group-hover:opacity-100 transition-opacity"></div>
-                <div className="relative bg-gradient-to-r from-red-600 to-red-700 p-2 rounded-xl">
-                  <span className="text-2xl">🦟</span>
+                <div className="relative bg-gradient-to-r from-red-600 to-red-700 p-2 rounded-xl shadow-md">
+                  <img 
+                    src="/logo.png" 
+                    alt="Denguess Logo" 
+                    className="w-8 h-8 object-contain"
+                  />
                 </div>
               </div>
               <span className="text-2xl font-black gradient-text">Denguess</span>
