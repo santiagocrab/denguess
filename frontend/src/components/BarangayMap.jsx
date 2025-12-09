@@ -17,42 +17,37 @@ if (typeof window !== 'undefined' && L.Icon && L.Icon.Default) {
   }
 }
 
-// Approximate coordinates for Koronadal City (you can adjust these)
-const KORONADAL_CENTER = [6.5031, 124.8470]
+// 🗺️ CORRECTED BARANGAY COORDINATES
+const BARANGAY_COORDINATES = {
+  'General Paulino Santos': [6.5050, 124.8473],
+  'Zone II': [6.4960, 124.8531],
+  'Santa Cruz': [6.4743, 124.8398],
+  'Sto. Niño': [6.4938, 124.8681],
+  'Morales': [6.4765, 124.8617],
+}
+
+// Approximate coordinates for Koronadal City center
+const KORONADAL_CENTER = [6.4938, 124.8531]
+
+// Create approximate polygons around centroids (0.01 degree radius ~1km)
+const createPolygonFromCenter = (center, radius = 0.008) => {
+  const [lat, lng] = center
+  return [
+    [lat + radius, lng - radius], // Top-left
+    [lat + radius, lng + radius], // Top-right
+    [lat - radius, lng + radius], // Bottom-right
+    [lat - radius, lng - radius], // Bottom-left
+    [lat + radius, lng - radius], // Close polygon
+  ]
+}
 
 // Simplified polygon boundaries for each barangay
-// In production, use actual GeoJSON boundaries
 const BARANGAY_BOUNDARIES = {
-  'General Paulino Santos': [
-    [6.51, 124.84],
-    [6.52, 124.84],
-    [6.52, 124.85],
-    [6.51, 124.85],
-  ],
-  'Morales': [
-    [6.50, 124.84],
-    [6.51, 124.84],
-    [6.51, 124.85],
-    [6.50, 124.85],
-  ],
-  'Santa Cruz': [
-    [6.49, 124.85],
-    [6.50, 124.85],
-    [6.50, 124.86],
-    [6.49, 124.86],
-  ],
-  'Sto. Niño': [
-    [6.50, 124.86],
-    [6.51, 124.86],
-    [6.51, 124.87],
-    [6.50, 124.87],
-  ],
-  'Zone II': [
-    [6.51, 124.85],
-    [6.52, 124.85],
-    [6.52, 124.86],
-    [6.51, 124.86],
-  ],
+  'General Paulino Santos': createPolygonFromCenter(BARANGAY_COORDINATES['General Paulino Santos']),
+  'Zone II': createPolygonFromCenter(BARANGAY_COORDINATES['Zone II']),
+  'Santa Cruz': createPolygonFromCenter(BARANGAY_COORDINATES['Santa Cruz']),
+  'Sto. Niño': createPolygonFromCenter(BARANGAY_COORDINATES['Sto. Niño']),
+  'Morales': createPolygonFromCenter(BARANGAY_COORDINATES['Morales']),
 }
 
 const getRiskColor = (risk) => {

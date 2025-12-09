@@ -24,9 +24,6 @@ const Home = () => {
               Denguess
             </h1>
           </div>
-          <p className="text-lg md:text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed mb-8">
-            Delikado kag makapatay ang dengue kun indi dayon maatubang. Kon pabayaan, ini nga masakit mahimo magdulot sang internal nga pagdurugo, shock, kag iban pa nga mabudlay nga komplikasyon. Ini ang webpage nga makabulig sa imo nga maka-assess kag malikawan ang dengue | Dengue is dangerous and can be fatal if not addressed immediately. When left untreated, it can lead to internal bleeding, shock, and other severe complications. This webpage can help you assess and prevent dengue.
-          </p>
         </div>
 
         {/* Barangays Grid */}

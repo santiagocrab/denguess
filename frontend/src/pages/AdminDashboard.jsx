@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { uploadClimateData, uploadDengueData, listUploads, retrainModel, getCaseReports } from '../services/api'
 import { Bar, Doughnut } from 'react-chartjs-2'
+import BarangayHeatmap from '../components/BarangayHeatmap'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -201,6 +202,13 @@ const AdminDashboard = () => {
         <div className="mb-8 animate-slide-up">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
           <p className="text-lg text-gray-600">Upload and manage dengue prediction data</p>
+        </div>
+
+        {/* Heatmap Section */}
+        <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-200 mb-8 animate-slide-up">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">Dengue Risk Heatmap</h2>
+          <p className="text-gray-600 mb-6">Real-time dengue risk visualization across all barangays in Koronadal City</p>
+          <BarangayHeatmap />
         </div>
 
         {/* Message Alert */}
