@@ -86,6 +86,7 @@ const BarangayHeatmap = () => {
   const fetchAllPredictions = async () => {
     try {
       setLoading(true)
+      // This now uses the same weather data as barangay pages
       const predictions = await getAllBarangayPredictions()
       const risks = {}
       
@@ -105,6 +106,15 @@ const BarangayHeatmap = () => {
       setLoading(false)
     }
   }
+
+  // Refresh predictions when weather updates (every 5 minutes like barangay pages)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchAllPredictions()
+    }, 300000) // 5 minutes, same as barangay pages
+
+    return () => clearInterval(interval)
+  }, [])
 
   return (
     <div className="w-full h-[600px] rounded-lg overflow-hidden shadow-lg border-2 border-gray-200">

@@ -116,16 +116,23 @@ export const getInsights = async () => {
 
 export const getAllBarangayPredictions = async () => {
   try {
+    // Import weather service to get current weather (same as barangay pages use)
+    const { getCurrentWeather } = await import('./weather')
+    
+    // Get current weather data (same source as barangay pages)
+    const weather = await getCurrentWeather()
+    const climate = {
+      temperature: weather.temperature,
+      humidity: weather.humidity,
+      rainfall: weather.rainfall
+    }
+    
     const barangays = await getBarangays()
     const startDate = new Date().toISOString().split('T')[0]
-    const climate = {
-      temperature: 28.0,
-      humidity: 75.0,
-      rainfall: 100.0
-    }
     
     const predictionsPromises = barangays.map(async (barangay) => {
       try {
+        // Use the same climate data and API call as barangay pages
         const response = await predictDengueRisk(barangay, climate, startDate)
         return {
           barangay,
