@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { motion } from 'framer-motion'
 import BarangayMap from '../components/BarangayMap'
 import RiskLegend from '../components/RiskLegend'
 import RiskChart from '../components/RiskChart'
@@ -204,7 +205,7 @@ const BarangayPage = ({ barangay }) => {
   const getRiskBadge = (risk) => {
     switch (risk) {
       case 'High':
-        return 'bg-red-600 text-white'
+        return 'bg-[#D64541] text-white'
       case 'Moderate':
         return 'bg-yellow-500 text-white'
       case 'Low':
@@ -214,8 +215,17 @@ const BarangayPage = ({ barangay }) => {
     }
   }
 
+  const pageRef = useRef(null)
+
+  useEffect(() => {
+    // GSAP animation for barangay page transition
+    if (pageRef.current) {
+      gsap.from(".barangay-analytics", { duration: 0.5, x: 20, opacity: 0, ease: "power2.out" })
+    }
+  }, [barangay])
+
   return (
-    <div className="min-h-screen pt-24 bg-gray-50 animate-fade-in">
+    <div ref={pageRef} className="min-h-screen pt-24 bg-gray-50 animate-fade-in">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
         <div className="mb-8 animate-slide-up">
@@ -231,7 +241,12 @@ const BarangayPage = ({ barangay }) => {
         </div>
 
         {/* Climate Parameters Card - Read Only */}
-        <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-200 mb-8 animate-slide-up">
+        <motion.div
+          className="bg-white rounded-xl p-8 shadow-lg border border-gray-200 mb-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Current Climate Conditions</h2>
             <p className="text-gray-600">Real-time weather data from Koronadal City (Auto-updated)</p>
@@ -267,11 +282,16 @@ const BarangayPage = ({ barangay }) => {
               decimals={1}
             />
           </div>
-        </div>
+        </motion.div>
 
         {/* AI Smart Alerts */}
         {forecast.length > 0 && (
-          <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-200 mb-8 animate-slide-up">
+          <motion.div
+            className="bg-white rounded-xl p-6 shadow-lg border border-gray-200 mb-8"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
             <h2 className="text-2xl font-bold text-gray-900 mb-4">🧠 AI Smart Alerts</h2>
             <div className="space-y-3">
               {(() => {
@@ -332,18 +352,28 @@ const BarangayPage = ({ barangay }) => {
                 )
               })()}
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* Map */}
-        <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-200 mb-8 animate-slide-up">
+        <motion.div
+          className="bg-white rounded-xl p-8 shadow-lg border border-gray-200 mb-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.3 }}
+        >
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Interactive Map</h2>
           <BarangayMap barangay={barangay} currentRisk={currentRisk} />
-        </div>
+        </motion.div>
 
         {/* Forecast Chart (Optional) */}
         {!loading && !error && forecast.length > 0 && (
-          <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-200 mb-8 animate-slide-up">
+          <motion.div
+            className="bg-white rounded-xl p-8 shadow-lg border border-gray-200 mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+          >
             <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
               <h2 className="text-2xl font-bold text-gray-900">Forecast Visualization</h2>
               <div className="flex space-x-2">
@@ -379,10 +409,8 @@ const BarangayPage = ({ barangay }) => {
                 </button>
               </div>
             </div>
-            <div className="opacity-0" style={{ animation: 'fadeIn 0.8s ease-out forwards' }}>
-              <RiskChart forecast={forecast} type={chartType} />
-            </div>
-          </div>
+            <RiskChart forecast={forecast} type={chartType} />
+          </motion.div>
         )}
 
         {/* Forecast Table */}

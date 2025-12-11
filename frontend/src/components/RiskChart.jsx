@@ -1,4 +1,5 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
+import { motion } from 'framer-motion'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -12,6 +13,7 @@ import {
   ArcElement,
 } from 'chart.js'
 import { Line, Bar, Doughnut } from 'react-chartjs-2'
+import { gsap } from 'gsap'
 
 ChartJS.register(
   CategoryScale,
@@ -26,6 +28,15 @@ ChartJS.register(
 )
 
 const RiskChart = ({ forecast, type = 'line', barangay = null, allBarangaysData = null, selectedBarangays = null, onBarangayToggle = null }) => {
+  const chartContainerRef = useRef(null)
+
+  useEffect(() => {
+    // GSAP entry animation for charts
+    if (chartContainerRef.current) {
+      gsap.from(chartContainerRef.current, { duration: 0.8, y: 20, opacity: 0, ease: "power2.out" })
+    }
+  }, [forecast, type])
+
   if (!forecast || forecast.length === 0) {
     return (
       <div className="w-full h-64 flex items-center justify-center bg-gray-50 rounded-lg">
@@ -71,7 +82,7 @@ const RiskChart = ({ forecast, type = 'line', barangay = null, allBarangaysData 
   if (allBarangaysData && selectedBarangays) {
     // Multi-barangay mode
     const barangayColors = {
-      'General Paulino Santos': '#D32F2F',
+      'General Paulino Santos': '#D64541',
       'Zone II': '#1976D2',
       'Santa Cruz': '#388E3C',
       'Sto. Niño': '#F57C00',
@@ -106,8 +117,8 @@ const RiskChart = ({ forecast, type = 'line', barangay = null, allBarangaysData 
       {
         label: 'Probability of Dengue Risk (%)',
         data: probabilities,
-        borderColor: '#D32F2F',
-        backgroundColor: 'rgba(211, 47, 47, 0.1)',
+        borderColor: '#D64541',
+        backgroundColor: 'rgba(214, 69, 65, 0.1)',
         tension: 0.4,
         fill: true,
       },
@@ -296,30 +307,47 @@ const RiskChart = ({ forecast, type = 'line', barangay = null, allBarangaysData 
 
   return (
     <div className="w-full">
-      {/* Barangay Toggle Switches (if multi-barangay mode) */}
+      {/* Barangay Filter Dropdown */}
       {allBarangaysData && onBarangayToggle && (
         <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-          <h4 className="text-sm font-semibold text-gray-700 mb-3">Filter by Barangay:</h4>
-          <div className="flex flex-wrap gap-3">
+          <label htmlFor="barangayFilter" className="block text-sm font-semibold text-gray-700 mb-2">
+            Filter by Barangay:
+          </label>
+          <select
+            id="barangayFilter"
+            className="w-full md:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D64541] focus:border-[#D64541] text-gray-700"
+            onChange={(e) => {
+              const selected = e.target.value
+              // Toggle the selected barangay
+              Object.keys(allBarangaysData).forEach(name => {
+                if (name === selected) {
+                  onBarangayToggle(name, true)
+                } else {
+                  onBarangayToggle(name, false)
+                }
+              })
+            }}
+          >
+            <option value="">All Barangays</option>
             {Object.keys(allBarangaysData).map(barangayName => (
-              <label key={barangayName} className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={selectedBarangays?.includes(barangayName) || false}
-                  onChange={(e) => onBarangayToggle(barangayName, e.target.checked)}
-                  className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-                />
-                <span className="text-sm text-gray-700">{barangayName}</span>
-              </label>
+              <option key={barangayName} value={barangayName}>
+                {barangayName}
+              </option>
             ))}
-          </div>
+          </select>
         </div>
       )}
-      <div className="w-full h-80 bg-white rounded-lg p-4">
+      <motion.div
+        ref={chartContainerRef}
+        className="chart-container w-full h-80 bg-white rounded-lg p-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1 }}
+      >
         {type === 'line' && <Line data={lineData} options={options} />}
         {type === 'bar' && <Bar data={barData} options={barOptions} />}
         {type === 'doughnut' && <Doughnut data={doughnutData} options={doughnutOptions} />}
-      </div>
+      </motion.div>
     </div>
   )
 }

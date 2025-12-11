@@ -1,5 +1,6 @@
 import { MapContainer, TileLayer, Polygon, Popup, Tooltip } from 'react-leaflet'
 import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { fetchBarangayBoundaries } from '../data/barangayBoundaries'
@@ -112,12 +113,22 @@ const MiniHeatmap = () => {
   }
 
   return (
-    <div className="bg-white rounded-xl p-4 shadow-lg border-2 border-gray-200 animate-slide-up">
+    <motion.div
+      className="bg-white rounded-xl p-4 shadow-lg border-2 border-gray-200"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8 }}
+    >
       <h3 className="text-lg font-bold text-gray-900 mb-2">Interactive Heatmap</h3>
       <p className="text-sm text-gray-600 mb-3 italic">
         🗺️ Real-time insights that help communities prepare, respond, and stay safe.
       </p>
-      <div className="h-64 rounded-lg overflow-hidden border border-gray-300">
+      <motion.div
+        className="h-64 rounded-lg overflow-hidden border border-gray-300"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1, delay: 0.2 }}
+      >
         <MapContainer
           center={KORONADAL_CENTER}
           zoom={12}
@@ -135,10 +146,12 @@ const MiniHeatmap = () => {
             // Use actual ML model prediction (same as barangay pages)
             const risk = barangayRisks[barangay] || 'Unknown'
             const color = getRiskColor(risk)
-            const fillOpacity = 0.4 // Adjusted opacity for better visibility
+            const fillOpacity = risk === 'High' ? 0.5 : risk === 'Moderate' ? 0.4 : 0.3 // Better opacity range
             const temp = weather?.temperature || 28.0
             const humidity = weather?.humidity || 75
-            const wind = weather?.windSpeed || 10
+            
+            // Simplified tooltip content as per requirements
+            const tooltipContent = `${barangay}<br>🌡 ${temp.toFixed(1)}°C | 💧 ${humidity}%`
             
             return (
               <Polygon
@@ -148,16 +161,11 @@ const MiniHeatmap = () => {
                   color: color,
                   fillColor: color,
                   fillOpacity: fillOpacity,
-                  weight: 3, // Thicker borders for better visibility
+                  weight: 2,
                 }}
               >
                 <Tooltip>
-                  <div className="text-sm">
-                    <strong>{barangay}</strong><br />
-                    🌡️ Temp: {temp.toFixed(1)}°C<br />
-                    💧 Humidity: {humidity}%<br />
-                    🌬️ Wind: {wind.toFixed(1)}kph
-                  </div>
+                  <div className="text-sm" dangerouslySetInnerHTML={{ __html: tooltipContent }} />
                 </Tooltip>
                 <Popup>
                   <div className="p-2">
@@ -184,7 +192,7 @@ const MiniHeatmap = () => {
             )
           })}
         </MapContainer>
-      </div>
+      </motion.div>
       <div className="mt-3 flex items-center justify-center gap-4 text-xs">
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 rounded bg-red-500"></div>
@@ -199,7 +207,7 @@ const MiniHeatmap = () => {
           <span>Low Risk</span>
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }
 

@@ -1,21 +1,37 @@
 import { useState } from 'react'
+import { motion } from 'framer-motion'
 
 const InformationDesk = () => {
   return (
-    <div className="min-h-screen pt-20 bg-gray-50 animate-fade-in">
+    <motion.div
+      className="min-h-screen pt-20 bg-gray-50"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.6 }}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
-        <div className="text-center mb-12 animate-slide-up">
+        <motion.div
+          className="text-center mb-12"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
             Dengue Information Desk
           </h1>
           <p className="text-lg text-gray-600">
             Learn about dengue prevention, symptoms, and treatment
           </p>
-        </div>
+        </motion.div>
 
         {/* Video Section */}
-        <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-200 mb-8 animate-slide-up">
+        <motion.div
+          className="bg-white rounded-xl p-8 shadow-lg border border-gray-200 mb-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Educational Video</h2>
           <div className="aspect-video w-full rounded-lg overflow-hidden bg-gray-100">
             <iframe
@@ -29,12 +45,17 @@ const InformationDesk = () => {
               className="w-full h-full"
             ></iframe>
           </div>
-        </div>
+        </motion.div>
 
         {/* Information Sections */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {/* Symptoms */}
-          <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-200 animate-slide-up">
+          <motion.div
+            className="bg-white rounded-xl p-8 shadow-lg border border-gray-200"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+          >
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Common Symptoms</h2>
             <ul className="space-y-3 text-gray-700">
               <li className="flex items-start">
@@ -66,10 +87,15 @@ const InformationDesk = () => {
                 <span>Bleeding signs</span>
               </li>
             </ul>
-          </div>
+          </motion.div>
 
           {/* Prevention */}
-          <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-200 animate-slide-up">
+          <motion.div
+            className="bg-white rounded-xl p-8 shadow-lg border border-gray-200"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Prevention Tips</h2>
             <ul className="space-y-3 text-gray-700">
               <li className="flex items-start">
@@ -97,11 +123,16 @@ const InformationDesk = () => {
                 <span>Cover water containers</span>
               </li>
             </ul>
-          </div>
+          </motion.div>
         </div>
 
         {/* Warning Section */}
-        <div className="bg-red-50 rounded-xl p-8 border-2 border-red-200 animate-slide-up">
+        <motion.div
+          className="bg-red-50 rounded-xl p-8 border-2 border-red-200"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+        >
           <h2 className="text-2xl font-bold text-red-900 mb-4">⚠️ Important Warning</h2>
           <p className="text-red-800 mb-4">
             Delikado kag makapatay ang dengue kun indi dayon maatubang. Kon pabayaan, ini nga masakit mahimo magdulot sang internal nga pagdurugo, shock, kag iban pa nga mabudlay nga komplikasyon.
@@ -109,10 +140,15 @@ const InformationDesk = () => {
           <p className="text-red-800">
             Dengue is dangerous and can be fatal if not addressed immediately. When left untreated, it can lead to internal bleeding, shock, and other severe complications.
           </p>
-        </div>
+        </motion.div>
 
         {/* When to Seek Help */}
-        <div className="bg-yellow-50 rounded-xl p-8 border-2 border-yellow-200 mt-8 animate-slide-up">
+        <motion.div
+          className="bg-yellow-50 rounded-xl p-8 border-2 border-yellow-200 mt-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+        >
           <h2 className="text-2xl font-bold text-yellow-900 mb-4">When to Seek Medical Help</h2>
           <p className="text-yellow-800 mb-4">
             Seek immediate medical attention if you experience:
@@ -125,9 +161,9 @@ const InformationDesk = () => {
             <li>• Fatigue or restlessness</li>
             <li>• Rapid decrease in platelet count</li>
           </ul>
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   )
 }
 

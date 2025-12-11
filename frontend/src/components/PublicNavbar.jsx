@@ -21,14 +21,15 @@ const PublicNavbar = () => {
         <div className="flex justify-between items-center h-20">
           <div className="flex items-center space-x-3">
             <Link to="/" className="flex items-center space-x-3 group">
-              <div className="bg-[#D32F2F] p-2 rounded-lg shadow-md group-hover:shadow-lg transition-shadow">
+              <div className="bg-white rounded-lg shadow-md py-3 px-4 group-hover:shadow-lg transition-all duration-300 ease-in-out group-hover:scale-105">
                 <img 
                   src="/logo.png" 
                   alt="Denguess Logo" 
-                  className="w-8 h-8 object-contain logo-hover"
+                  className="h-10 w-auto object-contain"
+                  style={{ height: '40px' }}
                 />
               </div>
-              <span className="text-2xl font-bold text-gray-900 group-hover:text-[#D32F2F] transition-colors">Denguess</span>
+              <span className="text-2xl font-bold text-[#1A1A1A] group-hover:text-[#D64541] transition-colors" style={{ fontWeight: 700 }}>Denguess</span>
             </Link>
           </div>
 
@@ -38,7 +39,7 @@ const PublicNavbar = () => {
               to="/"
               className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
                 isActive('/')
-                  ? 'bg-[#D32F2F] text-white shadow-md'
+                  ? 'bg-[#D64541] text-white shadow-md'
                   : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
@@ -48,7 +49,7 @@ const PublicNavbar = () => {
             <div className="relative group">
               <button className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center space-x-1 ${
                 barangays.some(b => isActive(b.path))
-                  ? 'bg-[#D32F2F] text-white shadow-md'
+                  ? 'bg-[#D64541] text-white shadow-md'
                   : 'text-gray-700 hover:bg-gray-100'
               }`}>
                 <span>Barangays</span>
@@ -64,7 +65,7 @@ const PublicNavbar = () => {
                       to={barangay.path}
                       className={`block px-4 py-3 text-sm font-medium transition-all duration-200 ${
                         isActive(barangay.path)
-                          ? 'bg-red-50 text-red-700 border-l-4 border-[#D32F2F]'
+                          ? 'bg-red-50 text-red-700 border-l-4 border-[#D64541]'
                           : 'text-gray-700 hover:bg-gray-50'
                       }`}
                     >
@@ -79,7 +80,7 @@ const PublicNavbar = () => {
               to="/information"
               className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
                 isActive('/information')
-                  ? 'bg-[#D32F2F] text-white shadow-md'
+                  ? 'bg-[#D64541] text-white shadow-md'
                   : 'text-gray-700 hover:bg-gray-100'
               }`}
             >

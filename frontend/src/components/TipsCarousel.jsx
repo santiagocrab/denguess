@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const TIPS = [
   "🦟 A bottle cap of stagnant water can breed 100+ mosquitoes.",
@@ -29,15 +30,29 @@ const TipsCarousel = () => {
   }
 
   return (
-    <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 shadow-lg border-2 border-green-200 animate-slide-up">
+    <motion.div
+      className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 shadow-lg border-2 border-green-200"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+    >
       <div className="flex items-center gap-3 mb-3">
         <div className="text-2xl">📚</div>
         <h3 className="text-lg font-bold text-gray-900">Did You Know?</h3>
       </div>
       <div className="min-h-[60px] flex items-center">
-        <p className="text-gray-800 text-sm leading-relaxed transition-opacity duration-500">
-          {TIPS[currentTip]}
-        </p>
+        <AnimatePresence mode="wait">
+          <motion.p
+            key={currentTip}
+            className="text-gray-800 text-sm leading-relaxed"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            {TIPS[currentTip]}
+          </motion.p>
+        </AnimatePresence>
       </div>
       <div className="flex items-center justify-center gap-2 mt-4">
         {TIPS.map((_, index) => (
@@ -51,7 +66,7 @@ const TipsCarousel = () => {
           />
         ))}
       </div>
-    </div>
+    </motion.div>
   )
 }
 

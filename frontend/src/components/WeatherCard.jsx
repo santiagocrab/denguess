@@ -1,16 +1,24 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { motion } from 'framer-motion'
 import { getCurrentWeather, subscribeToWeatherUpdates } from '../services/weather'
+import { gsap } from 'gsap'
 
 const WeatherCard = () => {
   const [weather, setWeather] = useState(null)
   const [lastUpdate, setLastUpdate] = useState(null)
   const [loading, setLoading] = useState(true)
+  const cardRef = useRef(null)
 
   useEffect(() => {
     const updateWeather = (data) => {
       setWeather(data)
       setLastUpdate(new Date())
       setLoading(false)
+      
+      // Animate card when weather updates
+      if (cardRef.current) {
+        gsap.from(cardRef.current, { duration: 0.5, opacity: 0, y: -10, ease: "power2.out" })
+      }
     }
 
     getCurrentWeather().then(updateWeather)
@@ -18,6 +26,13 @@ const WeatherCard = () => {
 
     return cleanup
   }, [])
+
+  useEffect(() => {
+    // Initial animation
+    if (cardRef.current && !loading) {
+      gsap.from(cardRef.current, { duration: 0.5, opacity: 0, y: -10, ease: "power2.out" })
+    }
+  }, [loading])
 
   const getWeatherIcon = (condition) => {
     const icons = {
@@ -41,16 +56,21 @@ const WeatherCard = () => {
     return (
       <div className="bg-white rounded-xl p-6 shadow-lg border-2 border-gray-200 animate-slide-up">
         <div className="flex items-center justify-center h-32">
-          <div className="animate-spin rounded-full h-8 w-8 border-4 border-red-600 border-t-transparent"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#D64541] border-t-transparent"></div>
         </div>
       </div>
     )
   }
 
   return (
-    <div 
-      className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 shadow-lg border-2 border-blue-200 animate-slide-up relative group"
+    <motion.div
+      ref={cardRef}
+      className="weather-card bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 shadow-lg border-2 border-blue-200 relative group"
+      style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 4px 12px' }}
       title="Live weather powered by OpenWeatherMap"
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
     >
       <div className="flex items-start justify-between mb-4">
         <div>
@@ -80,7 +100,7 @@ const WeatherCard = () => {
           Updated: {formatTime(lastUpdate)}
         </div>
       )}
-    </div>
+    </motion.div>
   )
 }
 

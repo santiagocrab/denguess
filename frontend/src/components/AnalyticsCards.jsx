@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
 import { getCurrentWeather } from '../services/weather'
 
 const AnalyticsCards = () => {
@@ -44,7 +45,12 @@ const AnalyticsCards = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
       {/* Temperature Card */}
-      <div className="bg-white rounded-xl p-4 shadow-lg border-2 border-gray-200 animate-slide-up">
+      <motion.div
+        className="bg-white rounded-xl p-4 shadow-lg border-2 border-gray-200"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+      >
         <div className="flex items-center justify-between">
           <div>
             <div className="text-sm text-gray-600 mb-1">🌡️ Temperature</div>
@@ -56,10 +62,15 @@ const AnalyticsCards = () => {
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Humidity Card */}
-      <div className="bg-white rounded-xl p-4 shadow-lg border-2 border-gray-200 animate-slide-up">
+      <motion.div
+        className="bg-white rounded-xl p-4 shadow-lg border-2 border-gray-200"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+      >
         <div className="flex items-center justify-between">
           <div>
             <div className="text-sm text-gray-600 mb-1">💧 Humidity</div>
@@ -71,10 +82,15 @@ const AnalyticsCards = () => {
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Rainfall Trend Card */}
-      <div className="bg-white rounded-xl p-4 shadow-lg border-2 border-gray-200 animate-slide-up">
+      <motion.div
+        className="bg-white rounded-xl p-4 shadow-lg border-2 border-gray-200"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.3 }}
+      >
         <div className="flex items-center justify-between">
           <div>
             <div className="text-sm text-gray-600 mb-1">🌧️ Rainfall Trend</div>
@@ -86,7 +102,7 @@ const AnalyticsCards = () => {
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   )
 }

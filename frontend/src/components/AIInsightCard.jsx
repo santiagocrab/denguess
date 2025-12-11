@@ -1,9 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { motion } from 'framer-motion'
 import { getInsights } from '../services/api'
+import { gsap } from 'gsap'
 
 const AIInsightCard = () => {
   const [insight, setInsight] = useState(null)
   const [loading, setLoading] = useState(true)
+  const cardRef = useRef(null)
 
   useEffect(() => {
     const fetchInsight = async () => {
@@ -24,6 +27,13 @@ const AIInsightCard = () => {
     fetchInsight()
   }, [])
 
+  useEffect(() => {
+    // GSAP slide-in animation for AI insight
+    if (cardRef.current && !loading) {
+      gsap.from(cardRef.current, { duration: 0.5, opacity: 0, x: -10, delay: 0.3, ease: "power2.out" })
+    }
+  }, [loading])
+
   if (loading) {
     return (
       <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-6 border-2 border-yellow-200 animate-slide-up">
@@ -38,15 +48,27 @@ const AIInsightCard = () => {
   }
 
   return (
-    <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-6 border-2 border-yellow-200 animate-slide-up">
+    <motion.div
+      ref={cardRef}
+      className="ai-insight bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-6 border-2 border-yellow-200"
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.5, delay: 0.3 }}
+    >
       <div className="flex items-start gap-3">
-        <div className="text-3xl">💡</div>
+        <motion.div
+          className="text-3xl"
+          animate={{ scale: [1, 1.1, 1] }}
+          transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
+        >
+          💡
+        </motion.div>
         <div className="flex-1">
           <div className="text-sm font-semibold text-yellow-900 mb-1">AI Insight</div>
           <p className="text-gray-800 text-sm leading-relaxed">{insight}</p>
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }
 
