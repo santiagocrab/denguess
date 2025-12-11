@@ -1,9 +1,10 @@
-import { MapContainer, TileLayer, Polygon, Popup } from 'react-leaflet'
+import { MapContainer, TileLayer, Polygon, Popup, Tooltip } from 'react-leaflet'
 import { useEffect, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { fetchBarangayBoundaries } from '../data/barangayBoundaries'
 import { getAllBarangayPredictions } from '../services/api'
+import { subscribeToWeatherUpdates, getCurrentWeather } from '../services/weather'
 
 // Fix for default marker icon
 if (typeof window !== 'undefined' && L.Icon && L.Icon.Default) {
@@ -38,6 +39,7 @@ const MiniHeatmap = () => {
   const [barangayRisks, setBarangayRisks] = useState({})
   const [loading, setLoading] = useState(true)
   const [loadingBoundaries, setLoadingBoundaries] = useState(true)
+  const [weather, setWeather] = useState(null)
 
   const fetchBoundaries = async () => {
     try {
@@ -81,12 +83,24 @@ const MiniHeatmap = () => {
     fetchAllPredictions()
     fetchBoundaries()
     
+    // Load current weather for tooltips
+    getCurrentWeather().then(setWeather)
+    
+    // Subscribe to weather updates to refresh predictions when weather changes
+    const weatherCleanup = subscribeToWeatherUpdates((weatherData) => {
+      setWeather(weatherData)
+      fetchAllPredictions()
+    }, 300000)  // Also refresh every 5 minutes
+    
     // Refresh predictions every 5 minutes (same as barangay pages)
     const interval = setInterval(() => {
       fetchAllPredictions()
     }, 300000)
 
-    return () => clearInterval(interval)
+    return () => {
+      clearInterval(interval)
+      if (weatherCleanup) weatherCleanup()
+    }
   }, [])
 
   if (loading || loadingBoundaries) {
@@ -99,7 +113,10 @@ const MiniHeatmap = () => {
 
   return (
     <div className="bg-white rounded-xl p-4 shadow-lg border-2 border-gray-200 animate-slide-up">
-      <h3 className="text-lg font-bold text-gray-900 mb-3">Interactive Heatmap</h3>
+      <h3 className="text-lg font-bold text-gray-900 mb-2">Interactive Heatmap</h3>
+      <p className="text-sm text-gray-600 mb-3 italic">
+        🗺️ Real-time insights that help communities prepare, respond, and stay safe.
+      </p>
       <div className="h-64 rounded-lg overflow-hidden border border-gray-300">
         <MapContainer
           center={KORONADAL_CENTER}
@@ -118,7 +135,10 @@ const MiniHeatmap = () => {
             // Use actual ML model prediction (same as barangay pages)
             const risk = barangayRisks[barangay] || 'Unknown'
             const color = getRiskColor(risk)
-            const opacity = risk === 'High' ? 0.7 : risk === 'Moderate' ? 0.5 : 0.3
+            const fillOpacity = 0.4 // Adjusted opacity for better visibility
+            const temp = weather?.temperature || 28.0
+            const humidity = weather?.humidity || 75
+            const wind = weather?.windSpeed || 10
             
             return (
               <Polygon
@@ -127,13 +147,26 @@ const MiniHeatmap = () => {
                 pathOptions={{
                   color: color,
                   fillColor: color,
-                  fillOpacity: opacity,
-                  weight: 2,
+                  fillOpacity: fillOpacity,
+                  weight: 3, // Thicker borders for better visibility
                 }}
               >
+                <Tooltip>
+                  <div className="text-sm">
+                    <strong>{barangay}</strong><br />
+                    🌡️ Temp: {temp.toFixed(1)}°C<br />
+                    💧 Humidity: {humidity}%<br />
+                    🌬️ Wind: {wind.toFixed(1)}kph
+                  </div>
+                </Tooltip>
                 <Popup>
                   <div className="p-2">
                     <h4 className="font-bold text-sm mb-2">{barangay}</h4>
+                    <div className="space-y-1 mb-2 text-xs">
+                      <div>🌡️ Temp: <strong>{temp.toFixed(1)}°C</strong></div>
+                      <div>💧 Humidity: <strong>{humidity}%</strong></div>
+                      <div>🌬️ Wind: <strong>{wind.toFixed(1)}kph</strong></div>
+                    </div>
                     <div className={`mt-2 px-2 py-1 rounded text-xs font-semibold ${
                       risk === 'High' ? 'bg-red-100 text-red-800' :
                       risk === 'Moderate' ? 'bg-yellow-100 text-yellow-800' :

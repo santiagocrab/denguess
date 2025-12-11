@@ -1,9 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import BarangayMap from '../components/BarangayMap'
 import RiskLegend from '../components/RiskLegend'
 import RiskChart from '../components/RiskChart'
+import AnimatedCounter from '../components/AnimatedCounter'
+import CaseReportModal from '../components/CaseReportModal'
 import { predictDengueRisk, reportCase } from '../services/api'
 import { getCurrentWeather, subscribeToWeatherUpdates } from '../services/weather'
+import { gsap } from 'gsap'
 
 const BarangayPage = ({ barangay }) => {
   const [forecast, setForecast] = useState([])
@@ -242,34 +245,95 @@ const BarangayPage = ({ barangay }) => {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-red-50 rounded-lg p-6 border-2 border-red-200">
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-semibold text-red-900">Temperature</label>
-                <span className="text-2xl">🌡️</span>
-              </div>
-              <div className="text-3xl font-bold text-red-700">{climateData.temperature.toFixed(1)}</div>
-              <div className="text-sm text-red-600 mt-1">°C</div>
-            </div>
-
-            <div className="bg-red-50 rounded-lg p-6 border-2 border-red-200">
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-semibold text-red-900">Humidity</label>
-                <span className="text-2xl">💧</span>
-              </div>
-              <div className="text-3xl font-bold text-red-700">{climateData.humidity.toFixed(1)}</div>
-              <div className="text-sm text-red-600 mt-1">%</div>
-            </div>
-
-            <div className="bg-red-50 rounded-lg p-6 border-2 border-red-200">
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-semibold text-red-900">Rainfall</label>
-                <span className="text-2xl">🌧️</span>
-              </div>
-              <div className="text-3xl font-bold text-red-700">{climateData.rainfall.toFixed(1)}</div>
-              <div className="text-sm text-red-600 mt-1">mm</div>
-            </div>
+            <AnimatedCounter
+              value={climateData.temperature}
+              label="Temperature"
+              icon="🌡️"
+              suffix="°C"
+              decimals={1}
+            />
+            <AnimatedCounter
+              value={climateData.humidity}
+              label="Humidity"
+              icon="💧"
+              suffix="%"
+              decimals={1}
+            />
+            <AnimatedCounter
+              value={climateData.rainfall}
+              label="Rainfall"
+              icon="🌧️"
+              suffix="mm"
+              decimals={1}
+            />
           </div>
         </div>
+
+        {/* AI Smart Alerts */}
+        {forecast.length > 0 && (
+          <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-200 mb-8 animate-slide-up">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">🧠 AI Smart Alerts</h2>
+            <div className="space-y-3">
+              {(() => {
+                const highRiskWeeks = forecast.filter(w => w.risk === 'High').length
+                const recentTrend = forecast.length >= 2 
+                  ? forecast[0].probability - forecast[1].probability 
+                  : 0
+                const alerts = []
+                
+                if (highRiskWeeks > 0) {
+                  alerts.push(
+                    <div key="high-risk" className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 shadow-sm rounded-md">
+                      <p className="font-semibold">⚠️ High Risk Alert</p>
+                      <p className="text-sm mt-1">
+                        {highRiskWeeks} week{highRiskWeeks > 1 ? 's' : ''} showing high dengue risk. 
+                        Take preventive measures and monitor symptoms closely.
+                      </p>
+                    </div>
+                  )
+                }
+                
+                if (recentTrend > 0.1) {
+                  alerts.push(
+                    <div key="trend-up" className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 shadow-sm rounded-md">
+                      <p className="font-semibold">📈 Rising Risk Trend</p>
+                      <p className="text-sm mt-1">
+                        Dengue risk is increasing. Based on 3-week trends, risk may spike after rainfall in {barangay}.
+                      </p>
+                    </div>
+                  )
+                } else if (recentTrend < -0.1) {
+                  alerts.push(
+                    <div key="trend-down" className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 shadow-sm rounded-md">
+                      <p className="font-semibold">📉 Decreasing Risk Trend</p>
+                      <p className="text-sm mt-1">
+                        Good news! Dengue risk is decreasing. Continue maintaining preventive measures.
+                      </p>
+                    </div>
+                  )
+                }
+                
+                if (climateData.rainfall > 20) {
+                  alerts.push(
+                    <div key="rainfall" className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 shadow-sm rounded-md">
+                      <p className="font-semibold">🌧️ High Rainfall Alert</p>
+                      <p className="text-sm mt-1">
+                        Current rainfall is elevated. Stagnant water may increase mosquito breeding. 
+                        Clear standing water around your area.
+                      </p>
+                    </div>
+                  )
+                }
+                
+                return alerts.length > 0 ? alerts : (
+                  <div className="bg-gray-100 border-l-4 border-gray-400 text-gray-700 p-4 shadow-sm rounded-md">
+                    <p className="text-sm">No active alerts. Current conditions are stable.</p>
+                  </div>
+                )
+              })()}
+            </div>
+          </div>
+        )}
 
         {/* Map */}
         <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-200 mb-8 animate-slide-up">
@@ -315,7 +379,9 @@ const BarangayPage = ({ barangay }) => {
                 </button>
               </div>
             </div>
-            <RiskChart forecast={forecast} type={chartType} />
+            <div className="opacity-0" style={{ animation: 'fadeIn 0.8s ease-out forwards' }}>
+              <RiskChart forecast={forecast} type={chartType} />
+            </div>
           </div>
         )}
 
@@ -341,7 +407,7 @@ const BarangayPage = ({ barangay }) => {
               }}
               className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold shadow-md hover:bg-green-700 transition-all transform hover:scale-105"
             >
-              {showReportForm ? 'Cancel Report' : 'Report Case'}
+              📥 Report Case
             </button>
           </div>
 
@@ -396,8 +462,45 @@ const BarangayPage = ({ barangay }) => {
             </div>
           )}
 
-          {/* Report Form */}
-          {showReportForm && (
+          {/* Report Form - Now using Modal */}
+          <CaseReportModal
+            isOpen={showReportForm}
+            onClose={() => {
+              setShowReportForm(false)
+              // Reset form when closing
+              setReportData({
+                name: '',
+                age: '',
+                sex: '',
+                address: barangay,
+                dateReported: new Date().toISOString().split('T')[0],
+                timeReported: new Date().toTimeString().slice(0, 5),
+                reportedBy: '',
+                fever: false,
+                headache: false,
+                musclePain: false,
+                rash: false,
+                nausea: false,
+                abdominalPain: false,
+                bleeding: false,
+                symptomOnsetDate: '',
+                riskRed: false,
+                riskYellow: false,
+                riskGreen: false,
+                referredToFacility: false,
+                advisedMonitoring: false,
+                notifiedFamily: false,
+                remarks: '',
+              })
+            }}
+            barangay={barangay}
+            onSubmit={handleReportSubmit}
+            reportData={reportData}
+            setReportData={setReportData}
+          />
+
+          {/* Legacy inline form (hidden, kept for reference) */}
+          {false && showReportForm && (
             <div className="mt-8 border-t-2 border-gray-200 pt-8">
               <h3 className="text-xl font-bold text-gray-900 mb-6">Report Dengue Case or Symptoms</h3>
               <form onSubmit={handleReportSubmit} className="space-y-8">

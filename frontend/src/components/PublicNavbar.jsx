@@ -21,14 +21,14 @@ const PublicNavbar = () => {
         <div className="flex justify-between items-center h-20">
           <div className="flex items-center space-x-3">
             <Link to="/" className="flex items-center space-x-3 group">
-              <div className="bg-red-600 p-2 rounded-lg shadow-md group-hover:shadow-lg transition-shadow">
+              <div className="bg-[#D32F2F] p-2 rounded-lg shadow-md group-hover:shadow-lg transition-shadow">
                 <img 
                   src="/logo.png" 
                   alt="Denguess Logo" 
                   className="w-8 h-8 object-contain logo-hover"
                 />
               </div>
-              <span className="text-2xl font-bold text-gray-900 group-hover:text-red-600 transition-colors">Denguess</span>
+              <span className="text-2xl font-bold text-gray-900 group-hover:text-[#D32F2F] transition-colors">Denguess</span>
             </Link>
           </div>
 
@@ -38,7 +38,7 @@ const PublicNavbar = () => {
               to="/"
               className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
                 isActive('/')
-                  ? 'bg-red-600 text-white shadow-md'
+                  ? 'bg-[#D32F2F] text-white shadow-md'
                   : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
@@ -48,7 +48,7 @@ const PublicNavbar = () => {
             <div className="relative group">
               <button className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center space-x-1 ${
                 barangays.some(b => isActive(b.path))
-                  ? 'bg-red-600 text-white shadow-md'
+                  ? 'bg-[#D32F2F] text-white shadow-md'
                   : 'text-gray-700 hover:bg-gray-100'
               }`}>
                 <span>Barangays</span>

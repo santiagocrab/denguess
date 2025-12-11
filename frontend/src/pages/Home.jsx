@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { getBarangays } from '../services/api'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import WeatherCard from '../components/WeatherCard'
 import MiniHeatmap from '../components/MiniHeatmap'
 import AIInsightCard from '../components/AIInsightCard'
@@ -8,12 +8,14 @@ import AnalyticsCards from '../components/AnalyticsCards'
 import ForecastSlider from '../components/ForecastSlider'
 import TipsCarousel from '../components/TipsCarousel'
 import { getCurrentWeather } from '../services/weather'
+import lottie from 'lottie-web'
 
 const Home = () => {
   const [barangays, setBarangays] = useState([])
   const [weather, setWeather] = useState(null)
   const [lastUpdate, setLastUpdate] = useState(null)
   const [theme, setTheme] = useState('default')
+  const mosquitoAnimRef = useRef(null)
 
   useEffect(() => {
     getBarangays().then(setBarangays).catch(console.error)
@@ -34,6 +36,31 @@ const Home = () => {
         setTheme('default')
       }
     })
+
+    // Initialize Lottie animation for mosquito icon
+    if (mosquitoAnimRef.current) {
+      // Create SVG-based mosquito animation (fallback if no Lottie JSON)
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+      svg.setAttribute('viewBox', '0 0 100 100')
+      svg.setAttribute('width', '100%')
+      svg.setAttribute('height', '100%')
+      svg.innerHTML = `
+        <g class="mosquito">
+          <circle cx="50" cy="50" r="8" fill="#D32F2F" opacity="0.8">
+            <animate attributeName="r" values="8;10;8" dur="2s" repeatCount="indefinite"/>
+          </circle>
+          <path d="M 50 42 L 50 30" stroke="#D32F2F" stroke-width="2" fill="none">
+            <animate attributeName="d" values="M 50 42 L 50 30;M 52 42 L 50 30;M 50 42 L 50 30" dur="3s" repeatCount="indefinite"/>
+          </path>
+          <path d="M 50 58 L 50 70" stroke="#D32F2F" stroke-width="2" fill="none">
+            <animate attributeName="d" values="M 50 58 L 50 70;M 48 58 L 50 70;M 50 58 L 50 70" dur="3s" repeatCount="indefinite"/>
+          </path>
+          <circle cx="45" cy="45" r="2" fill="#D32F2F"/>
+          <circle cx="55" cy="45" r="2" fill="#D32F2F"/>
+        </g>
+      `
+      mosquitoAnimRef.current.appendChild(svg)
+    }
   }, [])
 
   const handleRefresh = async () => {
@@ -66,16 +93,15 @@ const Home = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Hero Section */}
         <div className="text-center mb-12 animate-slide-up">
-          <div className="flex items-center justify-center gap-4 mb-6">
-            <img 
-              src="/logo.png" 
-              alt="Denguess Logo" 
-              className="w-16 h-16 md:w-20 md:h-20 object-contain animate-float drop-shadow-lg logo-hover"
-            />
+          <div className="flex items-center justify-center gap-4 mb-4">
+            <div ref={mosquitoAnimRef} id="mosquito-animation" className="w-16 h-16 md:w-20 md:h-20 animate-float"></div>
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900">
               Denguess
             </h1>
           </div>
+          <p className="text-center italic text-gray-600 mt-2 text-lg md:text-xl font-semibold">
+            🦟 Outsmart the Bite Before It Strikes
+          </p>
         </div>
 
         {/* Top Row: Weather Card and AI Insight */}
