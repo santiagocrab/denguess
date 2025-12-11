@@ -1,8 +1,5 @@
 import axios from 'axios'
-<<<<<<< HEAD
-=======
 import { getCurrentWeather } from './weather'
->>>>>>> 431ebb2 (✨ Major UI/UX Enhancement: Denguess Full App Upgrade)
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
@@ -80,18 +77,6 @@ export const predictBatch = async (requests) => {
 export const getWeeklyPredictions = async (barangay, startDate) => {
   // Use the new endpoint if available, otherwise fallback to old method
   try {
-<<<<<<< HEAD
-    const response = await api.get(`/predict/weekly/${encodeURIComponent(barangay)}`, {
-      params: { start_date: startDate }
-    })
-    return response.data
-  } catch (err) {
-    // Fallback to old method
-    const climate = {
-      temperature: 28.0,
-      humidity: 75.0,
-      rainfall: 100.0
-=======
     // Get real-time weather data for accurate predictions
     const weatherData = await getCurrentWeather()
     const response = await api.get(`/predict/weekly/${encodeURIComponent(barangay)}`, {
@@ -110,7 +95,6 @@ export const getWeeklyPredictions = async (barangay, startDate) => {
       temperature: weatherData.temperature,
       humidity: weatherData.humidity,
       rainfall: weatherData.rainfall || 0
->>>>>>> 431ebb2 (✨ Major UI/UX Enhancement: Denguess Full App Upgrade)
     }
     
     const response = await predictDengueRisk(barangay, climate, startDate)
@@ -141,25 +125,6 @@ export const getInsights = async () => {
 
 export const getAllBarangayPredictions = async () => {
   try {
-<<<<<<< HEAD
-    // Import weather service to get current weather (same as barangay pages use)
-    const { getCurrentWeather } = await import('./weather')
-    
-    // Get current weather data (same source as barangay pages)
-    const weather = await getCurrentWeather()
-    const climate = {
-      temperature: weather.temperature,
-      humidity: weather.humidity,
-      rainfall: weather.rainfall
-    }
-    
-    const barangays = await getBarangays()
-    const startDate = new Date().toISOString().split('T')[0]
-    
-    const predictionsPromises = barangays.map(async (barangay) => {
-      try {
-        // Use the same climate data and API call as barangay pages
-=======
     const barangays = await getBarangays()
     const startDate = new Date().toISOString().split('T')[0]
     
@@ -173,7 +138,6 @@ export const getAllBarangayPredictions = async () => {
     
     const predictionsPromises = barangays.map(async (barangay) => {
       try {
->>>>>>> 431ebb2 (✨ Major UI/UX Enhancement: Denguess Full App Upgrade)
         const response = await predictDengueRisk(barangay, climate, startDate)
         return {
           barangay,
