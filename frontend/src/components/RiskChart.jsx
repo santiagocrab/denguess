@@ -39,8 +39,11 @@ const RiskChart = ({ forecast, type = 'line', barangay = null, allBarangaysData 
 
   if (!forecast || forecast.length === 0) {
     return (
-      <div className="w-full h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-        <p className="text-gray-500">No forecast data available</p>
+      <div className="w-full h-80 flex items-center justify-center bg-gray-50 rounded-lg border-2 border-gray-200">
+        <div className="text-center">
+          <p className="text-gray-500 text-lg mb-2">No forecast data available</p>
+          <p className="text-gray-400 text-sm">Loading forecast data...</p>
+        </div>
       </div>
     )
   }
@@ -339,14 +342,17 @@ const RiskChart = ({ forecast, type = 'line', barangay = null, allBarangaysData 
       )}
       <motion.div
         ref={chartContainerRef}
-        className="chart-container w-full h-80 bg-white rounded-lg p-4"
+        className="chart-container w-full bg-white rounded-lg p-4"
+        style={{ minHeight: '400px', height: '400px' }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1 }}
       >
-        {type === 'line' && <Line data={lineData} options={options} />}
-        {type === 'bar' && <Bar data={barData} options={barOptions} />}
-        {type === 'doughnut' && <Doughnut data={doughnutData} options={doughnutOptions} />}
+        <div style={{ position: 'relative', height: '100%', width: '100%' }}>
+          {type === 'line' && <Line data={lineData} options={options} />}
+          {type === 'bar' && <Bar data={barData} options={barOptions} />}
+          {type === 'doughnut' && <Doughnut data={doughnutData} options={doughnutOptions} />}
+        </div>
       </motion.div>
     </div>
   )

@@ -366,22 +366,22 @@ const BarangayPage = ({ barangay }) => {
           <BarangayMap barangay={barangay} currentRisk={currentRisk} />
         </motion.div>
 
-        {/* Forecast Chart (Optional) */}
-        {!loading && !error && forecast.length > 0 && (
-          <motion.div
-            className="bg-white rounded-xl p-8 shadow-lg border border-gray-200 mb-8"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-          >
-            <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
-              <h2 className="text-2xl font-bold text-gray-900">Forecast Visualization</h2>
+        {/* Forecast Chart - Always visible section */}
+        <motion.div
+          className="bg-white rounded-xl p-8 shadow-lg border border-gray-200 mb-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.4 }}
+        >
+          <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
+            <h2 className="text-2xl font-bold text-gray-900">Forecast Visualization</h2>
+            {!loading && !error && forecast.length > 0 && (
               <div className="flex space-x-2">
                 <button
                   onClick={() => setChartType('line')}
                   className={`px-4 py-2 rounded-lg font-semibold transition-all ${
                     chartType === 'line' 
-                      ? 'bg-red-600 text-white' 
+                      ? 'bg-[#D64541] text-white' 
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
                 >
@@ -391,7 +391,7 @@ const BarangayPage = ({ barangay }) => {
                   onClick={() => setChartType('bar')}
                   className={`px-4 py-2 rounded-lg font-semibold transition-all ${
                     chartType === 'bar' 
-                      ? 'bg-red-600 text-white' 
+                      ? 'bg-[#D64541] text-white' 
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
                 >
@@ -401,17 +401,49 @@ const BarangayPage = ({ barangay }) => {
                   onClick={() => setChartType('doughnut')}
                   className={`px-4 py-2 rounded-lg font-semibold transition-all ${
                     chartType === 'doughnut' 
-                      ? 'bg-red-600 text-white' 
+                      ? 'bg-[#D64541] text-white' 
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
                 >
                   Distribution
                 </button>
               </div>
+            )}
+          </div>
+          
+          {loading ? (
+            <div className="w-full" style={{ minHeight: '400px' }}>
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#D64541] border-t-transparent mb-4"></div>
+                  <p className="text-gray-600 font-semibold">Loading forecast data...</p>
+                </div>
+              </div>
             </div>
-            <RiskChart forecast={forecast} type={chartType} />
-          </motion.div>
-        )}
+          ) : error ? (
+            <div className="w-full" style={{ minHeight: '400px' }}>
+              <div className="flex items-center justify-center h-full bg-red-50 rounded-lg border-2 border-red-200">
+                <div className="text-center">
+                  <p className="text-red-800 font-semibold mb-2">Error loading forecast</p>
+                  <p className="text-red-600 text-sm">{error}</p>
+                </div>
+              </div>
+            </div>
+          ) : forecast.length > 0 ? (
+            <div style={{ minHeight: '400px' }}>
+              <RiskChart forecast={forecast} type={chartType} />
+            </div>
+          ) : (
+            <div className="w-full" style={{ minHeight: '400px' }}>
+              <div className="flex items-center justify-center h-full bg-gray-50 rounded-lg border-2 border-gray-200">
+                <div className="text-center">
+                  <p className="text-gray-500 text-lg mb-2">No forecast data available</p>
+                  <p className="text-gray-400 text-sm">Please try refreshing the page</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </motion.div>
 
         {/* Forecast Table */}
         <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-200 mb-8 animate-slide-up">
@@ -843,12 +875,55 @@ const BarangayPage = ({ barangay }) => {
           )}
         </div>
 
-        {/* Risk Chart */}
+        {/* Risk Chart - Always visible when data is available */}
         {!loading && !error && forecast.length > 0 && (
-          <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-200 mb-8 animate-slide-up">
+          <motion.div
+            className="bg-white rounded-xl p-8 shadow-lg border border-gray-200 mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.5 }}
+          >
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Risk Trend Visualization</h2>
-            <RiskChart forecast={forecast} type="bar" />
-          </div>
+            <div style={{ minHeight: '400px' }}>
+              <RiskChart forecast={forecast} type="bar" />
+            </div>
+          </motion.div>
+        )}
+        
+        {/* Show loading state for Forecast Visualization */}
+        {loading && (
+          <motion.div
+            className="bg-white rounded-xl p-8 shadow-lg border border-gray-200 mb-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Forecast Visualization</h2>
+            <div className="w-full h-80 flex items-center justify-center bg-gray-50 rounded-lg">
+              <div className="text-center">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#D64541] border-t-transparent mb-4"></div>
+                <p className="text-gray-600 font-semibold">Loading forecast data...</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+        
+        {/* Show error state */}
+        {error && (
+          <motion.div
+            className="bg-white rounded-xl p-8 shadow-lg border border-gray-200 mb-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Forecast Visualization</h2>
+            <div className="w-full h-80 flex items-center justify-center bg-red-50 rounded-lg border-2 border-red-200">
+              <div className="text-center">
+                <p className="text-red-800 font-semibold mb-2">Error loading forecast</p>
+                <p className="text-red-600 text-sm">{error}</p>
+              </div>
+            </div>
+          </motion.div>
         )}
 
         {/* Risk Legend */}

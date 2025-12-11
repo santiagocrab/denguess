@@ -168,4 +168,3 @@ export const getAllBarangayPredictions = async () => {
 }
 
 export default api
-
