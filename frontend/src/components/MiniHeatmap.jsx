@@ -149,8 +149,9 @@ const MiniHeatmap = () => {
             const fillOpacity = risk === 'High' ? 0.5 : risk === 'Moderate' ? 0.4 : 0.3 // Better opacity range
             const temp = weather?.temperature || 28.0
             const humidity = weather?.humidity || 75
+            const wind = weather?.windSpeed || 10
             
-            // Simplified tooltip content as per requirements
+            // Simplified tooltip content as per requirements (only temp and humidity)
             const tooltipContent = `${barangay}<br>🌡 ${temp.toFixed(1)}°C | 💧 ${humidity}%`
             
             return (
