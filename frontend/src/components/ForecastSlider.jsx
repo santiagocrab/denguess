@@ -95,3 +95,7 @@ const ForecastSlider = () => {
 
 export default ForecastSlider
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 431ebb2 (✨ Major UI/UX Enhancement: Denguess Full App Upgrade)

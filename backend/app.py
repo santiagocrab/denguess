@@ -544,9 +544,23 @@ async def predict_batch(requests: List[PredictionRequest]):
     return {"results": results}
 
 @app.get("/predict/weekly/{barangay}")
+<<<<<<< HEAD
 async def get_weekly_predictions(barangay: str, start_date: str = Query(..., description="Start date in YYYY-MM-DD format")):
     """
     Get weekly predictions in the requested format:
+=======
+async def get_weekly_predictions(
+    barangay: str, 
+    start_date: str = Query(..., description="Start date in YYYY-MM-DD format"),
+    temperature: Optional[float] = Query(None, description="Current temperature in Celsius"),
+    humidity: Optional[float] = Query(None, description="Current humidity percentage"),
+    rainfall: Optional[float] = Query(None, description="Current rainfall in mm")
+):
+    """
+    Get weekly predictions in the requested format.
+    If climate parameters are provided, uses them for more accurate predictions.
+    Otherwise, uses historical averages for the current date.
+>>>>>>> 431ebb2 (✨ Major UI/UX Enhancement: Denguess Full App Upgrade)
     {
       "barangay": "Zone 2",
       "weekly_predictions": {
@@ -558,12 +572,31 @@ async def get_weekly_predictions(barangay: str, start_date: str = Query(..., des
     }
     """
     try:
+<<<<<<< HEAD
         # Use default climate data (can be enhanced to use current weather)
         climate_input = ClimateInput(
             temperature=28.0,
             humidity=75.0,
             rainfall=100.0
         )
+=======
+        # Use provided climate data if available, otherwise use historical averages for current date
+        if temperature is not None and humidity is not None and rainfall is not None:
+            climate_input = ClimateInput(
+                temperature=temperature,
+                humidity=humidity,
+                rainfall=rainfall
+            )
+        else:
+            # Use historical climate data for current date for better accuracy
+            current_date = datetime.now()
+            historical_climate = get_historical_climate_for_date(current_date)
+            climate_input = ClimateInput(
+                temperature=historical_climate.get('temperature', 28.0),
+                humidity=historical_climate.get('humidity', 75.0),
+                rainfall=historical_climate.get('rainfall', 100.0)
+            )
+>>>>>>> 431ebb2 (✨ Major UI/UX Enhancement: Denguess Full App Upgrade)
         
         request = PredictionRequest(
             barangay=barangay,

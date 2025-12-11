@@ -1,0 +1,35 @@
+{
+  "name": "Denguess - AI-Powered Dengue Prediction",
+  "short_name": "Denguess",
+  "description": "Real-time dengue risk prediction for Koronadal City using advanced AI and climate data",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAFAFA",
+  "theme_color": "#D32F2F",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["health", "medical", "weather"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "View Barangays",
+      "short_name": "Barangays",
+      "description": "View all barangay forecasts",
+      "url": "/#/",
+      "icons": [{ "src": "/logo.png", "sizes": "96x96" }]
+    }
+  ]
+}
