@@ -64,7 +64,7 @@ const PublicNavbar = () => {
                       to={barangay.path}
                       className={`block px-4 py-3 text-sm font-medium transition-all duration-200 ${
                         isActive(barangay.path)
-                          ? 'bg-red-50 text-red-700 border-l-4 border-red-600'
+                          ? 'bg-red-50 text-red-700 border-l-4 border-[#D32F2F]'
                           : 'text-gray-700 hover:bg-gray-50'
                       }`}
                     >
@@ -79,7 +79,7 @@ const PublicNavbar = () => {
               to="/information"
               className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
                 isActive('/information')
-                  ? 'bg-red-600 text-white shadow-md'
+                  ? 'bg-[#D32F2F] text-white shadow-md'
                   : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
