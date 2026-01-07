@@ -792,7 +792,7 @@ class AllBarangaysRequest(BaseModel):
     date: Optional[str] = None
 
 @app.post("/predict/all-barangays")
-async def predict_all_barangays(request: AllBarangaysRequest = None):
+async def predict_all_barangays(request: Optional[AllBarangaysRequest] = None):
     """
     Optimized endpoint to get predictions for all barangays at once.
     Perfect for heatmap loading - much faster than individual requests.
