@@ -59,19 +59,24 @@ allowed_origins = [
     "http://localhost:5174",  # Vite alternate port
     "http://127.0.0.1:5173",
     "http://127.0.0.1:8000",
-    # Add your production frontend URLs here
-    # "https://denguess.vercel.app",
-    # "https://denguess.netlify.app",
+    # Production frontend URLs
+    "https://denguess.vercel.app",
+    "https://denguess-santiagocrabs-projects.vercel.app",
+    "https://*.vercel.app",  # Allow all Vercel preview deployments
+    "https://denguess.netlify.app",
+    "https://*.netlify.app",  # Allow all Netlify deployments
 ]
 
-# In production, you might want to allow all origins or specific ones
-# For now, we'll allow all for easier deployment
+# In production, allow all origins for easier deployment
+# This ensures all Vercel preview deployments work
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Change to allowed_origins list for production security
+    allow_origins=["*"],  # Allow all origins for maximum compatibility
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=3600,
 )
 
 # Load model
