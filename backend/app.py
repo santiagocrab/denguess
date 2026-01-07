@@ -787,11 +787,12 @@ async def predict_batch(requests: List[PredictionRequest]):
     
     return {"results": results}
 
-@app.post("/predict/all-barangays")
-async def predict_all_barangays(
-    climate: Optional[ClimateInput] = None,
+class AllBarangaysRequest(BaseModel):
+    climate: Optional[ClimateInput] = None
     date: Optional[str] = None
-):
+
+@app.post("/predict/all-barangays")
+async def predict_all_barangays(request: AllBarangaysRequest = None):
     """
     Optimized endpoint to get predictions for all barangays at once.
     Perfect for heatmap loading - much faster than individual requests.
@@ -802,25 +803,33 @@ async def predict_all_barangays(
     if model is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
     
+    # Extract climate and date from request body
+    climate_data = None
+    date_str = None
+    
+    if request:
+        climate_data = request.climate
+        date_str = request.date
+    
     # Use provided climate or get historical for today
-    if climate is None:
+    if climate_data is None:
         today = datetime.now()
         historical = get_historical_climate_for_date(today)
-        climate = ClimateInput(
+        climate_data = ClimateInput(
             temperature=historical.get('temperature', 28.0),
             humidity=historical.get('humidity', 75.0),
             rainfall=historical.get('rainfall', 100.0)
         )
     
     # Use provided date or today
-    if date is None:
-        date = datetime.now().strftime("%Y-%m-%d")
+    if date_str is None:
+        date_str = datetime.now().strftime("%Y-%m-%d")
     
     # Get predictions for all barangays in parallel
-    requests = [PredictionRequest(barangay=b, climate=climate, date=date) for b in BARANGAYS]
+    prediction_requests = [PredictionRequest(barangay=b, climate=climate_data, date=date_str) for b in BARANGAYS]
     results = {}
     
-    for req in requests:
+    for req in prediction_requests:
         try:
             response = await predict(req)
             results[req.barangay] = {
@@ -830,7 +839,7 @@ async def predict_all_barangays(
             }
         except Exception as e:
             # Fallback for failed predictions
-            start_date = datetime.strptime(date, "%Y-%m-%d")
+            start_date = datetime.strptime(date_str, "%Y-%m-%d")
             fallback_forecast = []
             for week_num in range(4):
                 week_start = start_date + timedelta(weeks=week_num)
@@ -841,9 +850,9 @@ async def predict_all_barangays(
                     "probability": 0.45,
                     "outbreak_probability": 0.45,
                     "climate_used": {
-                        "rainfall": round(climate.rainfall, 1),
-                        "temperature": round(climate.temperature, 1),
-                        "humidity": round(climate.humidity, 1),
+                        "rainfall": round(climate_data.rainfall, 1),
+                        "temperature": round(climate_data.temperature, 1),
+                        "humidity": round(climate_data.humidity, 1),
                         "source": "fallback"
                     }
                 })
