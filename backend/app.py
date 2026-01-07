@@ -63,11 +63,25 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 @app.middleware("http")
 async def add_cors_headers(request, call_next):
     """Add CORS headers to ALL responses, including errors"""
+    # Handle OPTIONS preflight requests
     if request.method == "OPTIONS":
-        # Handle preflight requests
         response = JSONResponse(content={})
-    else:
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Max-Age"] = "3600"
+        return response
+    
+    # For all other requests, process normally then add CORS headers
+    try:
         response = await call_next(request)
+    except Exception as e:
+        # Even on errors, return a response with CORS headers
+        response = JSONResponse(
+            content={"error": str(e)},
+            status_code=500
+        )
     
     # Add CORS headers to every response
     response.headers["Access-Control-Allow-Origin"] = "*"
