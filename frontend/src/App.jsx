@@ -1,8 +1,17 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
 import { useState, useEffect, lazy, Suspense } from 'react'
 import LoadingScreen from './components/LoadingScreen'
 import PublicNavbar from './components/PublicNavbar'
 import AdminNavbar from './components/AdminNavbar'
+
+// Debug component to log current route
+const RouteDebugger = () => {
+  const location = useLocation()
+  useEffect(() => {
+    console.log('Current route:', location.pathname)
+  }, [location])
+  return null
+}
 
 // Lazy load pages for faster initial load
 const Home = lazy(() => import('./pages/Home'))
@@ -34,6 +43,7 @@ function App() {
 
   return (
     <Router>
+      <RouteDebugger />
       <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-4 border-red-600 border-t-transparent"></div></div>}>
         <Routes>
           {/* Admin Routes - Separate Layout - Must come before "/" */}
