@@ -3,14 +3,19 @@ import { getCurrentWeather } from './weather'
 
 // Detect if we're in production (Vercel)
 const isProduction = import.meta.env.PROD
-const API_BASE_URL = import.meta.env.VITE_API_URL || (isProduction ? '' : 'http://localhost:8000')
+// Use environment variable or default to Render backend
+// Always have a fallback URL to prevent empty baseURL
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://denguess-backend.onrender.com'
+
+console.log('[API] Base URL:', API_BASE_URL || 'NOT SET - using default')
+console.log('[API] Environment:', isProduction ? 'Production' : 'Development')
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: isProduction ? 60000 : 30000, // 60 seconds for production, 30 for dev
+  timeout: 90000, // 90 seconds - backend needs time to wake up from sleep
 })
 
 // Add request interceptor for debugging
