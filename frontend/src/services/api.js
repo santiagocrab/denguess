@@ -169,10 +169,11 @@ const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 // Check if backend is healthy
 export const checkBackendHealth = async () => {
   try {
-    const response = await api.get('/health', { timeout: 5000 })
+    const response = await api.get('/health', { timeout: 10000 }) // Increased to 10 seconds
     return response.data?.status === 'healthy'
   } catch (err) {
     console.warn('Backend health check failed:', err.message)
+    // If backend is sleeping, it might take longer - don't fail immediately
     return false
   }
 }
