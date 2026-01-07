@@ -36,7 +36,7 @@ function App() {
     <Router>
       <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-4 border-red-600 border-t-transparent"></div></div>}>
         <Routes>
-          {/* Admin Routes - Separate Layout */}
+          {/* Admin Routes - Separate Layout - Must come before "/" */}
           <Route
             path="/admin"
             element={
