@@ -219,7 +219,7 @@ const MiniHeatmap = () => {
                       risk === 'Low' ? 'bg-green-100 text-green-800' :
                       'bg-gray-100 text-gray-800'
                     }`}>
-                      {risk === 'High' ? '🔴 High Risk' : risk === 'Moderate' ? '🟡 Moderate Risk' : risk === 'Low' ? '🟢 Low Risk' : '⚪ Unknown'}
+                      {risk === 'High' ? '🔴 High Risk' : risk === 'Moderate' ? '🟡 Moderate Risk' : risk === 'Low' ? '🟢 Low Risk' : '🟡 Moderate Risk'}
                     </div>
                     <p className="text-xs text-gray-600 mt-2">
                       Based on ML model prediction

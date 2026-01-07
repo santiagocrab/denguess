@@ -37,6 +37,11 @@ const getRiskColor = (risk) => {
 const BarangayMap = ({ barangay, currentRisk }) => {
   const [bounds, setBounds] = useState(null)
   const [loading, setLoading] = useState(true)
+  
+  // Validate and sanitize currentRisk - never allow Unknown
+  const validatedRisk = (currentRisk === 'Low' || currentRisk === 'Moderate' || currentRisk === 'High') 
+    ? currentRisk 
+    : 'Moderate'
 
   useEffect(() => {
     const loadBoundaries = async () => {
@@ -61,7 +66,7 @@ const BarangayMap = ({ barangay, currentRisk }) => {
     loadBoundaries()
   }, [barangay])
 
-  const fillColor = getRiskColor(currentRisk)
+  const fillColor = getRiskColor(validatedRisk)
   const fillOpacity = 0.5
 
   if (loading || !bounds) {
@@ -100,10 +105,10 @@ const BarangayMap = ({ barangay, currentRisk }) => {
               <h3 className="font-bold text-lg text-gray-900 mb-2">{barangay}</h3>
               <p className="text-gray-700">
                 Current Risk: <span className={`font-bold ${
-                  currentRisk === 'High' ? 'text-red-600' :
-                  currentRisk === 'Moderate' ? 'text-yellow-600' :
+                  validatedRisk === 'High' ? 'text-red-600' :
+                  validatedRisk === 'Moderate' ? 'text-yellow-600' :
                   'text-green-600'
-                }`}>{currentRisk || 'Unknown'}</span>
+                }`}>{validatedRisk}</span>
               </p>
             </div>
           </Popup>

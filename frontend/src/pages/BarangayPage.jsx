@@ -57,7 +57,12 @@ const BarangayPage = ({ barangay }) => {
     remarks: '',
   })
 
-  const currentRisk = forecast.length > 0 ? forecast[0].risk : 'Unknown'
+  // Ensure we always have a valid risk - never Unknown
+  const currentRisk = forecast.length > 0 && forecast[0].risk 
+    ? (forecast[0].risk === 'Low' || forecast[0].risk === 'Moderate' || forecast[0].risk === 'High' 
+       ? forecast[0].risk 
+       : 'Moderate')
+    : 'Moderate'
 
   // Auto-update climate data from weather service (read-only for public)
   useEffect(() => {
