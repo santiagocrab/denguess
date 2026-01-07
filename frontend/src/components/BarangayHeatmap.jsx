@@ -89,14 +89,29 @@ const BarangayHeatmap = () => {
       const { getBarangays } = await import('../services/api')
       const allBarangays = await getBarangays()
       
-      // Get current week's risk for each barangay
+      // Get current week's risk for each barangay - ensure we always have a valid risk
       allBarangays.forEach(barangay => {
+        let riskValue = 'Moderate' // Default fallback
         if (predictions[barangay] && predictions[barangay].full_forecast && predictions[barangay].full_forecast.length > 0) {
           const forecast = predictions[barangay].full_forecast[0]
-          risks[barangay] = forecast.risk || 'Moderate' // Use Moderate as fallback instead of Unknown
+          // Validate risk value - must be Low, Moderate, or High
+          const validRisk = forecast.risk
+          if (validRisk === 'Low' || validRisk === 'Moderate' || validRisk === 'High') {
+            riskValue = validRisk
+          } else {
+            console.warn(`Invalid risk value for ${barangay}: ${validRisk}, using Moderate`)
+            riskValue = 'Moderate'
+          }
         } else {
-          // If prediction is missing, use Moderate as default (shouldn't happen with new retry logic)
+          // If prediction is missing, use Moderate as default
           console.warn(`Missing prediction for ${barangay}, using Moderate as fallback`)
+        }
+        risks[barangay] = riskValue
+      })
+      
+      // Ensure all barangays have a risk value
+      allBarangays.forEach(barangay => {
+        if (!risks[barangay] || risks[barangay] === 'Unknown' || risks[barangay] === '') {
           risks[barangay] = 'Moderate'
         }
       })
@@ -161,7 +176,11 @@ const BarangayHeatmap = () => {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           {BARANGAY_NAMES.map((barangay) => {
-            const risk = barangayRisks[barangay] || 'Moderate' // Never show Unknown
+            // Ensure we always have a valid risk value - never Unknown
+            let risk = barangayRisks[barangay]
+            if (!risk || risk === 'Unknown' || risk === '' || (risk !== 'Low' && risk !== 'Moderate' && risk !== 'High')) {
+              risk = 'Moderate'
+            }
             const fillColor = getRiskColor(risk)
             const fillOpacity = getRiskOpacity(risk)
             const boundaries = barangayBoundaries[barangay]

@@ -67,14 +67,29 @@ const MiniHeatmap = () => {
       const { getBarangays } = await import('../services/api')
       const allBarangays = await getBarangays()
       
-      // Get current week's risk for each barangay from ML model predictions
+      // Get current week's risk for each barangay from ML model predictions - ensure we always have a valid risk
       allBarangays.forEach(barangay => {
+        let riskValue = 'Moderate' // Default fallback
         if (predictions[barangay] && predictions[barangay].full_forecast && predictions[barangay].full_forecast.length > 0) {
           const forecast = predictions[barangay].full_forecast[0]
-          risks[barangay] = forecast.risk || 'Moderate' // Use Moderate as fallback instead of Unknown
+          // Validate risk value - must be Low, Moderate, or High
+          const validRisk = forecast.risk
+          if (validRisk === 'Low' || validRisk === 'Moderate' || validRisk === 'High') {
+            riskValue = validRisk
+          } else {
+            console.warn(`Invalid risk value for ${barangay}: ${validRisk}, using Moderate`)
+            riskValue = 'Moderate'
+          }
         } else {
-          // If prediction is missing, use Moderate as default (shouldn't happen with new retry logic)
+          // If prediction is missing, use Moderate as default
           console.warn(`Missing prediction for ${barangay}, using Moderate as fallback`)
+        }
+        risks[barangay] = riskValue
+      })
+      
+      // Ensure all barangays have a risk value
+      allBarangays.forEach(barangay => {
+        if (!risks[barangay] || risks[barangay] === 'Unknown' || risks[barangay] === '') {
           risks[barangay] = 'Moderate'
         }
       })
@@ -162,8 +177,11 @@ const MiniHeatmap = () => {
             const boundary = boundaries[barangay]
             if (!boundary) return null
             
-            // Use actual ML model prediction (same as barangay pages)
-            const risk = barangayRisks[barangay] || 'Unknown'
+            // Ensure we always have a valid risk value - never Unknown
+            let risk = barangayRisks[barangay]
+            if (!risk || risk === 'Unknown' || risk === '' || (risk !== 'Low' && risk !== 'Moderate' && risk !== 'High')) {
+              risk = 'Moderate'
+            }
             const color = getRiskColor(risk)
             const fillOpacity = risk === 'High' ? 0.5 : risk === 'Moderate' ? 0.4 : 0.3 // Better opacity range
             const temp = weather?.temperature || 28.0

@@ -216,9 +216,21 @@ export const getAllBarangayPredictionsOptimized = async () => {
         const predictionsObj = {}
         Object.keys(response.data.predictions).forEach(barangay => {
           const pred = response.data.predictions[barangay]
+          // Validate and sanitize forecast data
+          const forecast = (pred.weekly_forecast || []).map(week => {
+            // Ensure risk is always valid (Low, Moderate, or High)
+            let risk = week.risk
+            if (!risk || risk === 'Unknown' || (risk !== 'Low' && risk !== 'Moderate' && risk !== 'High')) {
+              risk = 'Moderate'
+            }
+            return {
+              ...week,
+              risk: risk
+            }
+          })
           predictionsObj[barangay] = {
             barangay,
-            full_forecast: pred.weekly_forecast || []
+            full_forecast: forecast
           }
         })
         
