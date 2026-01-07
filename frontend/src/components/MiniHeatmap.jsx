@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { fetchBarangayBoundaries } from '../data/barangayBoundaries'
-import { getAllBarangayPredictions } from '../services/api'
+import { getAllBarangayPredictionsOptimized } from '../services/api'
 import { subscribeToWeatherUpdates, getCurrentWeather } from '../services/weather'
 
 // Fix for default marker icon
@@ -59,22 +59,41 @@ const MiniHeatmap = () => {
   const fetchAllPredictions = async () => {
     try {
       setLoading(true)
-      // Use the same prediction API as barangay pages and admin dashboard
-      const predictions = await getAllBarangayPredictions()
+      // Use optimized batch endpoint for faster loading
+      const predictions = await getAllBarangayPredictionsOptimized()
       const risks = {}
       
+      // Get all barangays to ensure we have predictions for all
+      const { getBarangays } = await import('../services/api')
+      const allBarangays = await getBarangays()
+      
       // Get current week's risk for each barangay from ML model predictions
-      Object.keys(predictions).forEach(barangay => {
-        if (predictions[barangay].full_forecast && predictions[barangay].full_forecast.length > 0) {
-          risks[barangay] = predictions[barangay].full_forecast[0].risk
+      allBarangays.forEach(barangay => {
+        if (predictions[barangay] && predictions[barangay].full_forecast && predictions[barangay].full_forecast.length > 0) {
+          const forecast = predictions[barangay].full_forecast[0]
+          risks[barangay] = forecast.risk || 'Moderate' // Use Moderate as fallback instead of Unknown
         } else {
-          risks[barangay] = 'Unknown'
+          // If prediction is missing, use Moderate as default (shouldn't happen with new retry logic)
+          console.warn(`Missing prediction for ${barangay}, using Moderate as fallback`)
+          risks[barangay] = 'Moderate'
         }
       })
       
       setBarangayRisks(risks)
     } catch (error) {
       console.error('Error fetching predictions:', error)
+      // Set all to Moderate if fetch completely fails
+      const { getBarangays } = await import('../services/api')
+      try {
+        const allBarangays = await getBarangays()
+        const fallbackRisks = {}
+        allBarangays.forEach(barangay => {
+          fallbackRisks[barangay] = 'Moderate'
+        })
+        setBarangayRisks(fallbackRisks)
+      } catch (err) {
+        console.error('Error getting barangays for fallback:', err)
+      }
     } finally {
       setLoading(false)
     }

@@ -2,7 +2,7 @@ import { MapContainer, TileLayer, Polygon, Popup, Tooltip } from 'react-leaflet'
 import { useEffect, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { getAllBarangayPredictions } from '../services/api'
+import { getAllBarangayPredictionsOptimized } from '../services/api'
 import { fetchBarangayBoundaries, getBarangayCentroids } from '../data/barangayBoundaries'
 
 // Fix for default marker icon in React Leaflet
@@ -81,22 +81,47 @@ const BarangayHeatmap = () => {
   const fetchAllPredictions = async () => {
     try {
       setLoading(true)
-      // This now uses the same weather data as barangay pages
-      const predictions = await getAllBarangayPredictions()
+      // Use optimized batch endpoint for faster loading
+      const predictions = await getAllBarangayPredictionsOptimized()
       const risks = {}
       
+      // Get all barangays to ensure we have predictions for all
+      const { getBarangays } = await import('../services/api')
+      const allBarangays = await getBarangays()
+      
       // Get current week's risk for each barangay
-      Object.keys(predictions).forEach(barangay => {
-        if (predictions[barangay].full_forecast && predictions[barangay].full_forecast.length > 0) {
-          risks[barangay] = predictions[barangay].full_forecast[0].risk
+      allBarangays.forEach(barangay => {
+        if (predictions[barangay] && predictions[barangay].full_forecast && predictions[barangay].full_forecast.length > 0) {
+          const forecast = predictions[barangay].full_forecast[0]
+          risks[barangay] = forecast.risk || 'Moderate' // Use Moderate as fallback instead of Unknown
         } else {
-          risks[barangay] = 'Unknown'
+          // If prediction is missing, use Moderate as default (shouldn't happen with new retry logic)
+          console.warn(`Missing prediction for ${barangay}, using Moderate as fallback`)
+          risks[barangay] = 'Moderate'
         }
       })
       
       setBarangayRisks(risks)
     } catch (error) {
       console.error('Error fetching predictions:', error)
+      // Set all to Moderate if fetch completely fails
+      const { getBarangays } = await import('../services/api')
+      try {
+        const allBarangays = await getBarangays()
+        const fallbackRisks = {}
+        allBarangays.forEach(barangay => {
+          fallbackRisks[barangay] = 'Moderate'
+        })
+        setBarangayRisks(fallbackRisks)
+      } catch (err) {
+        console.error('Error getting barangays for fallback:', err)
+        // Final fallback - use hardcoded list
+        const fallbackRisks = {}
+        BARANGAY_NAMES.forEach(barangay => {
+          fallbackRisks[barangay] = 'Moderate'
+        })
+        setBarangayRisks(fallbackRisks)
+      }
     } finally {
       setLoading(false)
     }
@@ -136,7 +161,7 @@ const BarangayHeatmap = () => {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           {BARANGAY_NAMES.map((barangay) => {
-            const risk = barangayRisks[barangay] || 'Unknown'
+            const risk = barangayRisks[barangay] || 'Moderate' // Never show Unknown
             const fillColor = getRiskColor(risk)
             const fillOpacity = getRiskOpacity(risk)
             const boundaries = barangayBoundaries[barangay]

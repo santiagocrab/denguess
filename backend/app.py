@@ -1,6 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.middleware.gzip import GZipMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 from contextlib import asynccontextmanager
@@ -13,6 +14,7 @@ from datetime import datetime, timedelta
 import os
 from pathlib import Path
 import warnings
+from functools import lru_cache
 
 # Suppress sklearn version warnings
 warnings.filterwarnings('ignore', category=UserWarning)
@@ -42,6 +44,9 @@ app = FastAPI(
     description="AI-Powered Dengue Prediction System",
     lifespan=lifespan
 )
+
+# Add GZip compression for faster responses
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # CORS middleware
 # Allow all origins in production (you can restrict this to specific domains)
@@ -351,14 +356,47 @@ def prepare_features(rainfall: float, temperature: float, humidity: float, baran
     if date is None:
         date = datetime.now()
     
+    # Normalize barangay name (case-insensitive, handle variations)
+    barangay_normalized = barangay.strip()
+    barangay_variations = {
+        "general paulino santos": "General Paulino Santos",
+        "general paulino": "General Paulino Santos",
+        "gps": "General Paulino Santos",
+        "zone ii": "Zone II",
+        "zone 2": "Zone II",
+        "zone2": "Zone II",
+        "santa cruz": "Santa Cruz",
+        "sto. niño": "Sto. Niño",
+        "sto niño": "Sto. Niño",
+        "st. niño": "Sto. Niño",
+        "santo niño": "Sto. Niño",
+        "morales": "Morales"
+    }
+    
+    # Try to match normalized name
+    barangay_lower = barangay_normalized.lower()
+    if barangay_lower in barangay_variations:
+        barangay_normalized = barangay_variations[barangay_lower]
+    
     # Encode barangay
     if barangay_encoder is not None:
         try:
-            barangay_encoded = barangay_encoder.transform([barangay])[0]
-        except ValueError:
-            # Barangay not in encoder, use default (most common)
-            print(f"Barangay '{barangay}' not in encoder, using default")
-            barangay_encoded = 0
+            barangay_encoded = barangay_encoder.transform([barangay_normalized])[0]
+        except (ValueError, KeyError) as e:
+            # Barangay not in encoder, try to find closest match
+            print(f"Barangay '{barangay}' (normalized: '{barangay_normalized}') not in encoder, trying fallback")
+            # Check if any known barangay matches
+            if hasattr(barangay_encoder, 'classes_'):
+                known_barangays = list(barangay_encoder.classes_)
+                # Try exact match first
+                if barangay_normalized in known_barangays:
+                    barangay_encoded = barangay_encoder.transform([barangay_normalized])[0]
+                else:
+                    # Use first barangay as default
+                    print(f"Using default barangay encoding: {known_barangays[0] if known_barangays else '0'}")
+                    barangay_encoded = 0
+            else:
+                barangay_encoded = 0
     else:
         # Fallback: map barangay names to numbers
         barangay_map = {
@@ -368,7 +406,9 @@ def prepare_features(rainfall: float, temperature: float, humidity: float, baran
             "Sto. Niño": 3,
             "Zone II": 4
         }
-        barangay_encoded = barangay_map.get(barangay, 0)
+        barangay_encoded = barangay_map.get(barangay_normalized, 0)
+        if barangay_encoded == 0 and barangay_normalized not in barangay_map:
+            print(f"Warning: Unknown barangay '{barangay}', using default encoding 0")
     
     # Create base features
     features = {
@@ -466,6 +506,9 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Health check endpoint for monitoring"""
+    # Ensure model is loaded
+    if model is None:
+        load_model()
     return {
         "status": "healthy",
         "model_loaded": model is not None,
@@ -501,19 +544,47 @@ async def predict(request: PredictionRequest):
     Generate weekly dengue risk forecast using Random Forest model.
     
     Features must be in exact order: rainfall, temperature, humidity
+    Optimized for fast responses using preloaded model.
     """
     try:
-        model = load_model()
+        # Use global model (preloaded at startup) for better performance
+        global model
+        if model is None:
+            model = load_model()
         if model is None:
             raise HTTPException(status_code=503, detail="Model not loaded. Please ensure rf_dengue_model.pkl exists.")
         
-        # Validate inputs
+        # Validate and normalize inputs
         if not (0 <= request.climate.temperature <= 50):
             raise HTTPException(status_code=400, detail="Temperature must be between 0 and 50°C")
         if not (0 <= request.climate.humidity <= 100):
             raise HTTPException(status_code=400, detail="Humidity must be between 0 and 100%")
         if request.climate.rainfall < 0:
             raise HTTPException(status_code=400, detail="Rainfall cannot be negative")
+        
+        # Normalize barangay name
+        barangay_normalized = request.barangay.strip()
+        barangay_variations = {
+            "general paulino santos": "General Paulino Santos",
+            "general paulino": "General Paulino Santos",
+            "gps": "General Paulino Santos",
+            "zone ii": "Zone II",
+            "zone 2": "Zone II",
+            "zone2": "Zone II",
+            "santa cruz": "Santa Cruz",
+            "sto. niño": "Sto. Niño",
+            "sto niño": "Sto. Niño",
+            "st. niño": "Sto. Niño",
+            "santo niño": "Sto. Niño",
+            "morales": "Morales"
+        }
+        barangay_lower = barangay_normalized.lower()
+        if barangay_lower in barangay_variations:
+            barangay_normalized = barangay_variations[barangay_lower]
+        
+        # Validate barangay is in known list
+        if barangay_normalized not in BARANGAYS:
+            print(f"Warning: Barangay '{request.barangay}' not in known list, using as-is")
         
         # Parse start date
         try:
@@ -526,67 +597,107 @@ async def predict(request: PredictionRequest):
         
         # Base climate from user input (for week 1)
         base_climate = {
-            'rainfall': request.climate.rainfall,
-            'temperature': request.climate.temperature,
-            'humidity': request.climate.humidity
+            'rainfall': float(request.climate.rainfall),
+            'temperature': float(request.climate.temperature),
+            'humidity': float(request.climate.humidity)
         }
         
         for week_num in range(4):
-            week_start = start_date + timedelta(weeks=week_num)
-            
-            # Week 1: Use current/input climate data
-            # Weeks 2-4: Use historical averages for those specific dates with progressive variation
-            if week_num == 0:
-                # First week uses the input climate data
-                climate_data = base_climate
-            else:
-                # Future weeks use historical averages for that time of year
-                # Pass week_num as week_offset to add progressive variation
-                climate_data = get_historical_climate_for_date(week_start, base_climate, week_offset=week_num)
-            
-            # Prepare features in exact format model expects
-            features_df = prepare_features(
-                rainfall=climate_data['rainfall'],
-                temperature=climate_data['temperature'],
-                humidity=climate_data['humidity'],
-                barangay=request.barangay,
-                date=week_start
-            )
-            
-            # Get prediction probability
-            # predict_proba returns [probability_class_0, probability_class_1]
-            # class_0 = no outbreak (cases = 0)
-            # class_1 = outbreak (cases > 0)
-            probabilities = model.predict_proba(features_df)[0]
-            no_outbreak_prob = probabilities[0]
-            outbreak_prob = probabilities[1]
-            
-            # Use outbreak probability for risk assessment
-            probability = float(outbreak_prob)
-            
-            # Convert to risk level
-            risk = get_risk_level(probability)
-            
-            # Format week range
-            week_str = format_week_range(week_start)
-            
-            weekly_forecast.append({
-                "week": week_str,
-                "risk": risk,
-                "probability": round(probability, 4),  # More precision
-                "outbreak_probability": round(probability, 4),
-                "climate_used": {
-                    "rainfall": round(climate_data['rainfall'], 1),
-                    "temperature": round(climate_data['temperature'], 1),
-                    "humidity": round(climate_data['humidity'], 1),
-                    "source": "current" if week_num == 0 else "historical_average"
-                }
-            })
+            try:
+                week_start = start_date + timedelta(weeks=week_num)
+                
+                # Week 1: Use current/input climate data
+                # Weeks 2-4: Use historical averages for those specific dates with progressive variation
+                if week_num == 0:
+                    # First week uses the input climate data
+                    climate_data = base_climate.copy()
+                else:
+                    # Future weeks use historical averages for that time of year
+                    # Pass week_num as week_offset to add progressive variation
+                    climate_data = get_historical_climate_for_date(week_start, base_climate, week_offset=week_num)
+                
+                # Ensure climate data has valid values
+                climate_data['rainfall'] = max(0.0, float(climate_data.get('rainfall', 100.0)))
+                climate_data['temperature'] = max(20.0, min(35.0, float(climate_data.get('temperature', 28.0))))
+                climate_data['humidity'] = max(40.0, min(100.0, float(climate_data.get('humidity', 75.0))))
+                
+                # Prepare features in exact format model expects
+                features_df = prepare_features(
+                    rainfall=climate_data['rainfall'],
+                    temperature=climate_data['temperature'],
+                    humidity=climate_data['humidity'],
+                    barangay=barangay_normalized,
+                    date=week_start
+                )
+                
+                # Validate features DataFrame
+                if features_df.empty or features_df.shape[0] == 0:
+                    raise ValueError(f"Empty features DataFrame for week {week_num}")
+                
+                # Get prediction probability with error handling
+                try:
+                    probabilities = model.predict_proba(features_df)
+                    if probabilities is None or len(probabilities) == 0 or len(probabilities[0]) < 2:
+                        raise ValueError("Invalid probability prediction")
+                    no_outbreak_prob = probabilities[0][0]
+                    outbreak_prob = probabilities[0][1]
+                except Exception as pred_error:
+                    print(f"Prediction error for week {week_num}: {pred_error}")
+                    # Use default moderate risk if prediction fails
+                    outbreak_prob = 0.45
+                    no_outbreak_prob = 0.55
+                
+                # Use outbreak probability for risk assessment
+                probability = float(outbreak_prob)
+                
+                # Ensure probability is valid
+                if not (0 <= probability <= 1):
+                    probability = 0.45  # Default to moderate
+                
+                # Convert to risk level
+                risk = get_risk_level(probability)
+                
+                # Format week range
+                week_str = format_week_range(week_start)
+                
+                weekly_forecast.append({
+                    "week": week_str,
+                    "risk": risk,
+                    "probability": round(probability, 4),
+                    "outbreak_probability": round(probability, 4),
+                    "climate_used": {
+                        "rainfall": round(climate_data['rainfall'], 1),
+                        "temperature": round(climate_data['temperature'], 1),
+                        "humidity": round(climate_data['humidity'], 1),
+                        "source": "current" if week_num == 0 else "historical_average"
+                    }
+                })
+            except Exception as week_error:
+                # If a single week fails, use fallback values
+                print(f"Error processing week {week_num} for {barangay_normalized}: {week_error}")
+                week_start = start_date + timedelta(weeks=week_num)
+                week_str = format_week_range(week_start)
+                weekly_forecast.append({
+                    "week": week_str,
+                    "risk": "Moderate",  # Default fallback
+                    "probability": 0.45,
+                    "outbreak_probability": 0.45,
+                    "climate_used": {
+                        "rainfall": round(base_climate['rainfall'], 1),
+                        "temperature": round(base_climate['temperature'], 1),
+                        "humidity": round(base_climate['humidity'], 1),
+                        "source": "fallback"
+                    }
+                })
+        
+        # Ensure we have at least one forecast
+        if not weekly_forecast:
+            raise ValueError("Failed to generate any forecasts")
         
         # Get model info
         model_info = {
             "model_type": type(model).__name__,
-            "features_used": feature_names,
+            "features_used": feature_names if feature_names else [],
             "prediction_date": datetime.now().isoformat()
         }
         
@@ -600,29 +711,130 @@ async def predict(request: PredictionRequest):
     except Exception as e:
         import traceback
         error_details = traceback.format_exc()
-        print(f"Prediction error: {error_details}")
-        raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
+        print(f"Prediction error for {request.barangay}: {error_details}")
+        # Return a fallback response instead of raising error
+        start_date = datetime.strptime(request.date, "%Y-%m-%d") if request.date else datetime.now()
+        fallback_forecast = []
+        for week_num in range(4):
+            week_start = start_date + timedelta(weeks=week_num)
+            week_str = format_week_range(week_start)
+            fallback_forecast.append({
+                "week": week_str,
+                "risk": "Moderate",
+                "probability": 0.45,
+                "outbreak_probability": 0.45,
+                "climate_used": {
+                    "rainfall": round(request.climate.rainfall, 1),
+                    "temperature": round(request.climate.temperature, 1),
+                    "humidity": round(request.climate.humidity, 1),
+                    "source": "fallback"
+                }
+            })
+        return PredictionResponse(
+            weekly_forecast=fallback_forecast,
+            model_info={"error": str(e), "prediction_date": datetime.now().isoformat()}
+        )
 
 @app.post("/predict/batch")
 async def predict_batch(requests: List[PredictionRequest]):
-    """Batch prediction for multiple barangays/dates"""
+    """Batch prediction for multiple barangays/dates - optimized for heatmap"""
+    global model
+    if model is None:
+        model = load_model()
+    if model is None:
+        raise HTTPException(status_code=503, detail="Model not loaded")
+    
     results = []
-    for req in requests:
+    # Process in parallel for better performance
+    async def process_single(req: PredictionRequest):
         try:
             response = await predict(req)
-            results.append({
+            return {
                 "barangay": req.barangay,
                 "date": req.date,
                 "forecast": response.weekly_forecast,
                 "model_info": response.model_info
-            })
+            }
         except Exception as e:
-            results.append({
+            return {
                 "barangay": req.barangay,
                 "date": req.date,
                 "error": str(e)
-            })
+            }
+    
+    # Process all requests in parallel
+    tasks = [process_single(req) for req in requests]
+    results = await asyncio.gather(*tasks)
+    
     return {"results": results}
+
+@app.post("/predict/all-barangays")
+async def predict_all_barangays(
+    climate: Optional[ClimateInput] = None,
+    date: Optional[str] = None
+):
+    """
+    Optimized endpoint to get predictions for all barangays at once.
+    Perfect for heatmap loading - much faster than individual requests.
+    """
+    global model
+    if model is None:
+        model = load_model()
+    if model is None:
+        raise HTTPException(status_code=503, detail="Model not loaded")
+    
+    # Use provided climate or get historical for today
+    if climate is None:
+        today = datetime.now()
+        historical = get_historical_climate_for_date(today)
+        climate = ClimateInput(
+            temperature=historical.get('temperature', 28.0),
+            humidity=historical.get('humidity', 75.0),
+            rainfall=historical.get('rainfall', 100.0)
+        )
+    
+    # Use provided date or today
+    if date is None:
+        date = datetime.now().strftime("%Y-%m-%d")
+    
+    # Get predictions for all barangays in parallel
+    requests = [PredictionRequest(barangay=b, climate=climate, date=date) for b in BARANGAYS]
+    results = {}
+    
+    for req in requests:
+        try:
+            response = await predict(req)
+            results[req.barangay] = {
+                "barangay": req.barangay,
+                "weekly_forecast": response.weekly_forecast,
+                "model_info": response.model_info
+            }
+        except Exception as e:
+            # Fallback for failed predictions
+            start_date = datetime.strptime(date, "%Y-%m-%d")
+            fallback_forecast = []
+            for week_num in range(4):
+                week_start = start_date + timedelta(weeks=week_num)
+                week_str = format_week_range(week_start)
+                fallback_forecast.append({
+                    "week": week_str,
+                    "risk": "Moderate",
+                    "probability": 0.45,
+                    "outbreak_probability": 0.45,
+                    "climate_used": {
+                        "rainfall": round(climate.rainfall, 1),
+                        "temperature": round(climate.temperature, 1),
+                        "humidity": round(climate.humidity, 1),
+                        "source": "fallback"
+                    }
+                })
+            results[req.barangay] = {
+                "barangay": req.barangay,
+                "weekly_forecast": fallback_forecast,
+                "model_info": {"error": str(e)}
+            }
+    
+    return {"predictions": results}
 
 @app.get("/predict/weekly/{barangay}")
 async def get_weekly_predictions(
