@@ -258,8 +258,20 @@ export const getAllBarangayPredictionsOptimized = async () => {
     if (predictionsCache) {
       return predictionsCache
     }
-    // Return fallback
-    const barangays = await getBarangays()
+    // Return fallback - use hardcoded list if getBarangays fails
+    let barangays
+    try {
+      barangays = await getBarangays()
+    } catch (err) {
+      console.warn('Error getting barangays for fallback, using hardcoded list:', err)
+      barangays = ['General Paulino Santos', 'Morales', 'Santa Cruz', 'Sto. Niño', 'Zone II']
+    }
+    
+    // Ensure barangays is an array
+    if (!Array.isArray(barangays) || barangays.length === 0) {
+      barangays = ['General Paulino Santos', 'Morales', 'Santa Cruz', 'Sto. Niño', 'Zone II']
+    }
+    
     const fallback = {}
     barangays.forEach(barangay => {
       fallback[barangay] = {
