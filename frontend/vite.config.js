@@ -12,8 +12,8 @@ export default defineConfig(({ mode }) => ({
     }),
   ],
   
-  // Base path: '/' for dev, './' for production static hosting
-  base: mode === 'production' ? './' : '/',
+  // Base path: '/' for all environments (Vercel handles routing)
+  base: '/',
   
   // Development server config
   server: {
