@@ -45,30 +45,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Add GZip compression for faster responses
-app.add_middleware(GZipMiddleware, minimum_size=1000)
-
-# CORS middleware
-# Allow all origins in production (you can restrict this to specific domains)
-allowed_origins = [
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "http://localhost:3002",
-    "http://localhost:3003",
-    "http://localhost:5173",  # Vite default port
-    "http://localhost:5174",  # Vite alternate port
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:8000",
-    # Production frontend URLs
-    "https://denguess.vercel.app",
-    "https://denguess-santiagocrabs-projects.vercel.app",
-    "https://*.vercel.app",  # Allow all Vercel preview deployments
-    "https://denguess.netlify.app",
-    "https://*.netlify.app",  # Allow all Netlify deployments
-]
-
-# In production, allow all origins for easier deployment
-# This ensures all Vercel preview deployments work
+# Add CORS middleware FIRST - this is critical for Vercel
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Allow all origins for maximum compatibility
@@ -78,6 +55,27 @@ app.add_middleware(
     expose_headers=["*"],
     max_age=3600,
 )
+
+# Add GZip compression for faster responses
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+# Add explicit CORS headers middleware to ensure headers are ALWAYS present
+@app.middleware("http")
+async def add_cors_headers(request, call_next):
+    """Add CORS headers to ALL responses, including errors"""
+    if request.method == "OPTIONS":
+        # Handle preflight requests
+        response = JSONResponse(content={})
+    else:
+        response = await call_next(request)
+    
+    # Add CORS headers to every response
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    response.headers["Access-Control-Max-Age"] = "3600"
+    return response
 
 # Load model
 MODEL_PATH = Path(__file__).parent.parent / "rf_dengue_model.pkl"
@@ -514,11 +512,13 @@ async def health_check():
     # Ensure model is loaded
     if model is None:
         load_model()
-    return {
+    response = JSONResponse({
         "status": "healthy",
         "model_loaded": model is not None,
         "timestamp": datetime.now().isoformat()
-    }
+    })
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    return response
 
 @app.get("/barangays")
 async def get_barangays():
