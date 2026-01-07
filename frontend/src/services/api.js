@@ -7,15 +7,19 @@ const isProduction = import.meta.env.PROD
 // Always have a fallback URL to prevent empty baseURL
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://denguess-backend.onrender.com'
 
+// API Configuration - Version 2.0 (Updated timeout to 90s)
+const API_TIMEOUT = 90000 // 90 seconds - backend needs time to wake up from sleep
+
 console.log('[API] Base URL:', API_BASE_URL || 'NOT SET - using default')
 console.log('[API] Environment:', isProduction ? 'Production' : 'Development')
+console.log('[API] Timeout:', API_TIMEOUT, 'ms')
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 90000, // 90 seconds - backend needs time to wake up from sleep
+  timeout: API_TIMEOUT, // 90 seconds - backend needs time to wake up from sleep
 })
 
 // Add request interceptor for debugging
