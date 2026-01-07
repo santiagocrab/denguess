@@ -36,6 +36,8 @@ const AdminDashboard = () => {
   const [caseReportsAnalytics, setCaseReportsAnalytics] = useState(null)
 
   useEffect(() => {
+    // Debug: Log when admin dashboard loads
+    console.log('Admin Dashboard loaded at path:', window.location.pathname)
     fetchUploads()
     fetchCaseReports()
     
