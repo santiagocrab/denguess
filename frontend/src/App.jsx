@@ -50,7 +50,7 @@ function App() {
           <Route
             path="/admin"
             element={
-              <div className="min-h-screen bg-gray-50">
+              <div className="min-h-screen bg-gray-50" data-route="admin">
                 <AdminNavbar />
                 <div className="pt-20">
                   <AdminDashboard />
