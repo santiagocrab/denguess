@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { getBarangays } from '../services/api'
+import { getBarangays, getAllBarangayPredictionsOptimized } from '../services/api'
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import WeatherCard from '../components/WeatherCard'
@@ -15,9 +15,12 @@ const Home = () => {
   const [weather, setWeather] = useState(null)
   const [lastUpdate, setLastUpdate] = useState(null)
   const [theme, setTheme] = useState('default')
+  const [barangayRisks, setBarangayRisks] = useState([])
 
   useEffect(() => {
-    getBarangays().then(setBarangays).catch(console.error)
+    getBarangays()
+      .then((data) => setBarangays(Array.isArray(data) ? data : []))
+      .catch(console.error)
     
     // Load weather for theming
     getCurrentWeather().then((data) => {
@@ -35,6 +38,28 @@ const Home = () => {
         setTheme('default')
       }
     })
+    // Load current barangay risks for summary
+    const loadBarangayRisks = async () => {
+      try {
+        const [allBarangays, predictions] = await Promise.all([
+          getBarangays(),
+          getAllBarangayPredictionsOptimized(),
+        ])
+        const safeBarangays = Array.isArray(allBarangays) && allBarangays.length > 0
+          ? allBarangays
+          : ['General Paulino Santos', 'Morales', 'Santa Cruz', 'Sto. Niño', 'Zone II']
+        const risks = safeBarangays.map((barangay) => {
+          const forecast = predictions?.[barangay]?.full_forecast?.[0]
+          const risk = forecast?.risk
+          const safeRisk = risk === 'Low' || risk === 'Moderate' || risk === 'High' ? risk : 'Moderate'
+          return { barangay, risk: safeRisk }
+        })
+        setBarangayRisks(risks)
+      } catch (error) {
+        console.error('Error loading barangay risks:', error)
+      }
+    }
+    loadBarangayRisks()
   }, [])
 
   const handleRefresh = async () => {
@@ -64,10 +89,7 @@ const Home = () => {
 
   return (
     <div className={`min-h-screen pt-20 ${getThemeGradient()} animate-fade-in transition-colors duration-500 relative overflow-hidden`}>
-      {/* Mosquito Flying Animation Background - Enhanced */}
-      <div className="fixed inset-0 w-full h-full pointer-events-none" style={{ top: '80px', zIndex: 1 }}>
-        <MosquitoAnimation count={15} />
-      </div>
+      {/* Mosquito Flying Animation Background - Removed */}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative z-10">
         {/* Premium Hero Section */}
@@ -146,7 +168,7 @@ const Home = () => {
                 ease: "easeInOut",
               }}
             >
-              Denguess
+              DenGuess
             </motion.span>
           </motion.h1>
 
@@ -184,8 +206,34 @@ const Home = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
+            className="flex flex-col gap-4"
           >
             <AIInsightCard />
+            <div className="bg-white rounded-xl p-4 shadow-lg border-2 border-gray-200">
+              <div className="text-sm font-semibold text-gray-900 mb-2">Current Barangay Risk Summary</div>
+              {Array.isArray(barangayRisks) && barangayRisks.length === 0 ? (
+                <div className="text-xs text-gray-500">Loading risk summary...</div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  {(Array.isArray(barangayRisks) ? barangayRisks : []).map(({ barangay, risk }) => (
+                    <div key={barangay} className="flex items-center justify-between bg-gray-50 rounded-lg px-2 py-1">
+                      <span className="text-gray-700">{barangay}</span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full font-semibold ${
+                          risk === 'High'
+                            ? 'bg-red-100 text-red-800'
+                            : risk === 'Moderate'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-green-100 text-green-800'
+                        }`}
+                      >
+                        {risk}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </motion.div>
         </div>
 
@@ -234,7 +282,7 @@ const Home = () => {
 
         {/* Barangays Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {barangays.map((barangay) => {
+          {(Array.isArray(barangays) ? barangays : []).map((barangay) => {
             const slug = barangay.toLowerCase().replace(/\s+/g, '-').replace(/\./g, '')
             const path = `/${slug === 'sto.-niño' ? 'santo-nino' : slug === 'zone-ii' ? 'zone-2' : slug}`
             

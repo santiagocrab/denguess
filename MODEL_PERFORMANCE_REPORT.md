@@ -21,13 +21,54 @@ This report presents a comprehensive performance evaluation of the optimized Ran
 
 ### Performance Summary
 
+- **Training Set Accuracy:** 98.06%
+- **Validation Accuracy (3-Fold CV on Training Split):** 82.26%
 - **Test Set Accuracy:** 97.14% (34 out of 35 predictions correct)
-- **Cross-Validation Accuracy:** 88.91% (Random Forest)
+- **Overall Accuracy (All Samples):** 97.97%
+- **Cross-Validation Accuracy:** 88.91% (Random Forest, hyperparameter tuning)
 - **Precision:** 100.00% (perfect precision)
 - **Recall:** 96.43% (excellent recall)
 - **F1 Score:** 98.18%
 - **ROC AUC:** 97.96%
 - **Confusion Matrix:** True Positives: 27, False Positives: 0, False Negatives: 1, True Negatives: 7
+
+---
+
+## Training, Validation, and Test Metrics (Random Forest)
+
+The values below summarize model performance across training, validation, and test splits.
+
+| Split | Accuracy | Precision | Recall | F1 Score | ROC AUC |
+|------|----------|-----------|--------|----------|---------|
+| **Training** | 0.9806 (98.06%) | 0.9764 (97.64%) | 1.0000 (100.00%) | 0.9880 (98.80%) | 0.9997 (99.97%) |
+| **Validation (3-Fold CV)** | 0.8226 (82.26%) | 0.8434 (84.34%) | 0.9558 (95.58%) | 0.8960 (89.60%) | N/A |
+| **Test** | 0.9714 (97.14%) | 1.0000 (100.00%) | 0.9643 (96.43%) | 0.9818 (98.18%) | 0.9796 (97.96%) |
+| **Overall (All Samples)** | 0.9797 (97.97%) | 0.9786 (97.86%) | 0.9964 (99.64%) | 0.9874 (98.74%) | 0.9983 (99.83%) |
+
+**Validation Notes:** 3-fold stratified cross-validation on the training split (test_size=0.10, random_state=42) using the same selected features as the saved RF model.
+
+### Table: Performance Metrics of the RF Model
+
+| Metric | Training | Testing | Validated Data (3-Fold CV) |
+|--------|----------|---------|----------------------------|
+| **Accuracy** | 98.06% | 97.14% | 82.26% |
+| **Precision** | 97.64% | 100.00% | 84.34% |
+| **Recall** | 100.00% | 96.43% | 95.58% |
+| **F1 Score** | 98.80% | 98.18% | 89.60% |
+
+### Training Set Metrics (Separate)
+
+- **Accuracy:** 98.06%
+- **Precision:** 97.64%
+- **Recall:** 100.00%
+- **F1 Score:** 98.80%
+
+### Overall Dataset Metrics (All 345 Samples)
+
+- **Accuracy:** 97.97%
+- **Precision:** 97.86%
+- **Recall:** 99.64%
+- **F1 Score:** 98.74%
 
 ---
 
@@ -51,6 +92,12 @@ The following metrics were calculated on the test set, which consists of 35 samp
 - **Correct Predictions:** 34 out of 35 (97.14%)
 - **Incorrect Predictions:** 1 out of 35 (2.86%)
 
+### Training Set Composition
+
+- **Total Training Samples:** 310 (90% of 345 total samples)
+- **Outbreak Cases:** 248 (80.0%)
+- **No-Outbreak Cases:** 62 (20.0%)
+
 ### Metric Definitions
 
 - **Accuracy:** The proportion of correct predictions among all predictions (97.14%)
@@ -64,6 +111,25 @@ The following metrics were calculated on the test set, which consists of 35 samp
 ## Confusion Matrix Analysis
 
 The confusion matrix provides a detailed breakdown of prediction accuracy across both classes.
+
+### Training Set Confusion Matrix
+
+```
+                    Predicted
+                 No Outbreak  Outbreak
+Actual
+No Outbreak            56           6
+Outbreak                0         248
+```
+
+### Training Set Components
+
+| Category | Count | Description |
+|----------|-------|-------------|
+| **True Negatives (TN)** | 56 | Correctly predicted no outbreak cases |
+| **False Positives (FP)** | 6 | Incorrectly predicted outbreak cases (Type I Error) |
+| **False Negatives (FN)** | 0 | Missed actual outbreak cases (Type II Error) |
+| **True Positives (TP)** | 248 | Correctly predicted outbreak cases |
 
 ### Confusion Matrix
 
@@ -283,6 +349,100 @@ The model was configured with the following hyperparameters, optimized through R
 - **Evaluation Method:** Train-Test Split (90% training, 10% testing) with 3-Fold Stratified Cross-Validation
 - **Dataset:** 345 samples representing 5 barangays across 69 unique dates
 - **Training Script:** `backend/retrain_model_enhanced.py`
+
+---
+
+## Figure Guide and Paper Recommendations
+
+This section explains each available figure and recommends what to include in the paper.
+
+### Figure Explanations (One-by-One)
+
+**Combined Figure Explanation (Pred Figures):** The barangay prediction plots in the `figures` folder—`figures/monthly_cases_vs_pred_General_Paulino_Santos.png`, `figures/monthly_cases_vs_pred_Morales.png`, `figures/monthly_cases_vs_pred_Santa_Cruz.png`, `figures/monthly_cases_vs_pred_Sto._Niño.png`, and `figures/monthly_cases_vs_pred_Zone_II.png`—collectively show how predicted monthly cases (red line) align with actual monthly dengue cases (blue line). Taken together, these figures demonstrate temporal trend matching across barangays, showing seasonal peaks and localized spikes while emphasizing alignment rather than exact case forecasting.
+
+1. **Monthly Dengue Cases vs Predicted Outbreak Probability (All Barangays)**
+   - **File:** `figures/monthly_cases_vs_prob.png`
+   - **What it shows:** Overall monthly dengue cases (blue bars) vs average predicted outbreak probability (orange line).
+   - **Why it matters:** Demonstrates how model risk signals track broad temporal patterns, even before barangay-level separation.
+
+2. **Barangay Monthly Cases vs Predicted Probability (Per Barangay)**
+   - **Files:**  
+     - `figures/monthly_cases_vs_prob_General_Paulino_Santos.png`  
+     - `figures/monthly_cases_vs_prob_Morales.png`  
+     - `figures/monthly_cases_vs_prob_Santa_Cruz.png`  
+     - `figures/monthly_cases_vs_prob_Sto._Niño.png`  
+     - `figures/monthly_cases_vs_prob_Zone_II.png`
+   - **What it shows:** For each barangay, monthly cases (blue bars) and predicted outbreak probability (orange line).
+   - **Why it matters:** Highlights barangay-level differentiation and whether probability curves follow local case spikes.
+
+3. **Barangay Monthly Cases vs Predicted Cases (Monthly Regressor)**
+   - **Files:**  
+     - `figures/monthly_cases_vs_pred_General_Paulino_Santos.png`  
+     - `figures/monthly_cases_vs_pred_Morales.png`  
+     - `figures/monthly_cases_vs_pred_Santa_Cruz.png`  
+     - `figures/monthly_cases_vs_pred_Sto._Niño.png`  
+     - `figures/monthly_cases_vs_pred_Zone_II.png`
+   - **What it shows:** Actual monthly cases (blue line) vs model-predicted monthly cases (red line).
+   - **Why it matters:** Demonstrates temporal alignment at the monthly level and supports the claim that predictions follow real trends.
+
+### Recommended Tables for the Paper
+
+1. **Dataset Summary Table**
+   - Total samples, dates, barangays, class distribution, and climate feature coverage.
+
+2. **Model Performance Metrics Table**
+   - Accuracy, precision, recall, F1, ROC AUC on training/validation/test.
+
+3. **Confusion Matrix Table**
+   - Include test set confusion matrix (TN, FP, FN, TP).
+
+4. **Barangay-Level Monthly Alignment Table**
+   - Correlation between actual monthly cases and predicted probability or predicted cases per barangay.
+
+5. **Feature Importance Table**
+   - Top 10–20 features with importance scores (highlight temporal features).
+
+### Recommended Figures for the Paper
+
+1. **System Architecture / Pipeline Diagram**
+   - End-to-end flow: data input → feature engineering → model → outputs.
+
+2. **UI/UX Mockup or Screenshot**
+   - Display the prediction interface, input fields, and results panel.
+
+3. **Monthly Cases vs Predicted Probability (Overall)**
+   - Use `monthly_cases_vs_prob.png` as a high-level summary figure.
+
+4. **Barangay-Level Monthly Plots**
+   - Include 2–3 representative barangays in the main paper, move all five to the appendix.
+
+5. **Monthly Predicted vs Actual Cases (Regressor)**
+   - Use the red/blue line plot for temporal alignment discussion.
+
+6. **Feature Importance Bar Chart**
+   - Highlight temporal + climate features for interpretability.
+
+### Paperwork Checklist (Suggested Sections)
+
+- **Abstract** (problem, method, key results)
+- **Introduction** (dengue burden + local motivation)
+- **Related Work** (climate-based dengue modeling)
+- **Methodology**  
+  - Data sources  
+  - Feature engineering  
+  - Model training + calibration  
+  - Evaluation approach  
+- **Results**  
+  - Metrics table  
+  - Confusion matrix  
+  - Key figures  
+- **Discussion**  
+  - Barangay differentiation  
+  - Temporal alignment  
+  - Limitations  
+- **Conclusion & Future Work**  
+  - Data expansion  
+  - Real-time deployment  
 
 ---
 

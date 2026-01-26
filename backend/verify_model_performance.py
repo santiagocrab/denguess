@@ -14,18 +14,63 @@ def load_and_merge_data(climate_file, cases_file):
         climate['date'] = pd.to_datetime(climate['date'], errors='coerce')
         dengue = pd.read_csv(cases_file)
         dengue['date'] = pd.to_datetime(dengue['date'], errors='coerce')
-        dengue_grouped = dengue.groupby('date')['cases'].sum().reset_index()
-        dengue_grouped['label'] = (dengue_grouped['cases'] > 0).astype(int)
-        df = pd.merge(climate, dengue_grouped[['date', 'label']], on='date', how='inner')
-        df = df.sort_values('date').reset_index(drop=True)
+        dengue['label'] = (dengue['cases'] > 0).astype(int)
+        df = pd.merge(
+            dengue[['date', 'barangay', 'cases', 'label']],
+            climate[['date', 'rainfall', 'temperature', 'humidity']],
+            on='date',
+            how='inner'
+        )
+        df = df.sort_values(['date', 'barangay']).reset_index(drop=True)
         df = df.dropna()
         return df
     except Exception as e:
         print(f"Error: {e}")
         return None
 
-def create_advanced_features(df):
+def create_advanced_features(df, barangay_encoder=None):
     df_fe = df.copy()
+
+    # Barangay temporal features (lagged cases + rolling average)
+    if 'barangay' in df_fe.columns and 'cases' in df_fe.columns:
+        monthly = df_fe[['barangay', 'date', 'cases']].copy()
+        monthly['month_period'] = monthly['date'].dt.to_period('M')
+        monthly = (
+            monthly.groupby(['barangay', 'month_period'], as_index=False)['cases']
+            .sum()
+            .sort_values(['barangay', 'month_period'])
+        )
+        monthly['prev_month_cases'] = monthly.groupby('barangay')['cases'].shift(1)
+        monthly['rolling_3mo_avg_cases'] = (
+            monthly.groupby('barangay')['cases']
+            .shift(1)
+            .rolling(3, min_periods=1)
+            .mean()
+        )
+        monthly[['prev_month_cases', 'rolling_3mo_avg_cases']] = (
+            monthly[['prev_month_cases', 'rolling_3mo_avg_cases']].fillna(0)
+        )
+        df_fe['month_period'] = df_fe['date'].dt.to_period('M')
+        df_fe = df_fe.merge(
+            monthly[['barangay', 'month_period', 'prev_month_cases', 'rolling_3mo_avg_cases']],
+            on=['barangay', 'month_period'],
+            how='left'
+        )
+        df_fe[['prev_month_cases', 'rolling_3mo_avg_cases']] = (
+            df_fe[['prev_month_cases', 'rolling_3mo_avg_cases']].fillna(0)
+        )
+        df_fe = df_fe.drop(columns=['month_period'])
+    else:
+        df_fe['prev_month_cases'] = 0
+        df_fe['rolling_3mo_avg_cases'] = 0
+
+    if 'barangay' in df_fe.columns:
+        if barangay_encoder is not None:
+            df_fe['barangay_encoded'] = barangay_encoder.transform(df_fe['barangay'])
+        else:
+            from sklearn.preprocessing import LabelEncoder
+            le = LabelEncoder()
+            df_fe['barangay_encoded'] = le.fit_transform(df_fe['barangay'])
     df_fe['month'] = df_fe['date'].dt.month
     df_fe['quarter'] = df_fe['date'].dt.quarter
     df_fe['day_of_year'] = df_fe['date'].dt.dayofyear
@@ -69,6 +114,8 @@ def create_advanced_features(df):
 
 base_dir = Path(__file__).parent.parent
 model_path = base_dir / "rf_dengue_model.pkl"
+encoder_path = base_dir / "barangay_encoder.pkl"
+feature_names_path = base_dir / "feature_names.pkl"
 climate_file = base_dir / "climate.csv"
 cases_file = base_dir / "dengue_cases.csv"
 
@@ -91,11 +138,18 @@ print(f"   No outbreak: {(df['label'] == 0).sum()} ({(df['label'] == 0).mean()*1
 
 # Create features
 print("\n3. Creating features...")
-df_fe = create_advanced_features(df)
-numeric_cols = df_fe.select_dtypes(include=[np.number]).columns.tolist()
-if 'label' in numeric_cols:
-    numeric_cols.remove('label')
-X = df_fe[numeric_cols]
+barangay_encoder = joblib.load(encoder_path) if encoder_path.exists() else None
+df_fe = create_advanced_features(df, barangay_encoder=barangay_encoder)
+if feature_names_path.exists():
+    feature_names = joblib.load(feature_names_path)
+    X = df_fe[feature_names]
+else:
+    numeric_cols = df_fe.select_dtypes(include=[np.number]).columns.tolist()
+    if 'label' in numeric_cols:
+        numeric_cols.remove('label')
+    if 'cases' in numeric_cols:
+        numeric_cols.remove('cases')
+    X = df_fe[numeric_cols]
 y = df_fe['label']
 print(f"   Features: {len(X.columns)}")
 print(f"   Samples: {len(X)}")

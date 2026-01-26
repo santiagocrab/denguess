@@ -54,7 +54,8 @@ api.interceptors.response.use(
 
 export const getBarangays = async () => {
   const response = await api.get('/barangays')
-  return response.data.barangays
+  const barangays = response?.data?.barangays
+  return Array.isArray(barangays) ? barangays : []
 }
 
 export const predictDengueRisk = async (barangay, climate, date) => {

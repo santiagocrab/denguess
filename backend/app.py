@@ -433,6 +433,9 @@ def prepare_features(rainfall: float, temperature: float, humidity: float, baran
         'temperature': [temperature],
         'humidity': [humidity],
         'barangay_encoded': [barangay_encoded],  # Add barangay encoding
+        # Barangay temporal features (default to 0 for single-date inference)
+        'prev_month_cases': [0],
+        'rolling_3mo_avg_cases': [0],
     }
     
     # Add temporal features

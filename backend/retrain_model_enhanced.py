@@ -80,18 +80,56 @@ def load_and_merge_data(climate_file, cases_file):
         traceback.print_exc()
         return None
 
-def create_advanced_features(df):
-    """Create comprehensive advanced features"""
+def create_advanced_features(df, barangay_encoder=None):
+    """Create comprehensive advanced features, including barangay temporal trends"""
     print("\nCreating advanced features...")
     
     df_fe = df.copy()
+
+    # Barangay temporal features (lagged cases + rolling average)
+    if 'barangay' in df_fe.columns and 'cases' in df_fe.columns:
+        monthly = df_fe[['barangay', 'date', 'cases']].copy()
+        monthly['month_period'] = monthly['date'].dt.to_period('M')
+        monthly = (
+            monthly.groupby(['barangay', 'month_period'], as_index=False)['cases']
+            .sum()
+            .sort_values(['barangay', 'month_period'])
+        )
+        monthly['prev_month_cases'] = monthly.groupby('barangay')['cases'].shift(1)
+        monthly['rolling_3mo_avg_cases'] = (
+            monthly.groupby('barangay')['cases']
+            .shift(1)
+            .rolling(3, min_periods=1)
+            .mean()
+        )
+        monthly[['prev_month_cases', 'rolling_3mo_avg_cases']] = (
+            monthly[['prev_month_cases', 'rolling_3mo_avg_cases']].fillna(0)
+        )
+        df_fe['month_period'] = df_fe['date'].dt.to_period('M')
+        df_fe = df_fe.merge(
+            monthly[['barangay', 'month_period', 'prev_month_cases', 'rolling_3mo_avg_cases']],
+            on=['barangay', 'month_period'],
+            how='left'
+        )
+        df_fe[['prev_month_cases', 'rolling_3mo_avg_cases']] = (
+            df_fe[['prev_month_cases', 'rolling_3mo_avg_cases']].fillna(0)
+        )
+        df_fe = df_fe.drop(columns=['month_period'])
+    else:
+        # Ensure feature columns exist for inference without case history
+        df_fe['prev_month_cases'] = 0
+        df_fe['rolling_3mo_avg_cases'] = 0
     
     # Encode barangay
     if 'barangay' in df_fe.columns:
-        from sklearn.preprocessing import LabelEncoder
-        le = LabelEncoder()
-        df_fe['barangay_encoded'] = le.fit_transform(df_fe['barangay'])
-        df_fe._barangay_encoder = le
+        if barangay_encoder is not None:
+            df_fe['barangay_encoded'] = barangay_encoder.transform(df_fe['barangay'])
+            df_fe._barangay_encoder = barangay_encoder
+        else:
+            from sklearn.preprocessing import LabelEncoder
+            le = LabelEncoder()
+            df_fe['barangay_encoded'] = le.fit_transform(df_fe['barangay'])
+            df_fe._barangay_encoder = le
     
     # Temporal features
     df_fe['month'] = df_fe['date'].dt.month
@@ -394,15 +432,22 @@ def train_model(df, use_smote=True):
         print(f"\nFeatures: {len(X.columns)} features")
         print(f"   Samples: {len(X)}")
         
-        # Feature selection (keep more features for better accuracy)
+        # Feature selection (keep all to preserve barangay temporal features)
         print("\nPerforming feature selection...")
-        k_features = min(60, len(X.columns))  # Increased from 50 to 60
-        selector = SelectKBest(score_func=mutual_info_classif, k=k_features)
-        X_selected = selector.fit_transform(X, y)
-        selected_features = X.columns[selector.get_support()].tolist()
-        X = pd.DataFrame(X_selected, columns=selected_features, index=X.index)
-        print(f"   Selected {len(selected_features)} best features")
+        k_features = len(X.columns)
+        if k_features < len(X.columns):
+            selector = SelectKBest(score_func=mutual_info_classif, k=k_features)
+            X_selected = selector.fit_transform(X, y)
+            selected_features = X.columns[selector.get_support()].tolist()
+            X = pd.DataFrame(X_selected, columns=selected_features, index=X.index)
+            print(f"   Selected {len(selected_features)} best features")
+        else:
+            selected_features = X.columns.tolist()
+            print(f"   Selected all {len(selected_features)} features")
         
+        # Ensure numeric features are float for SMOTE compatibility
+        X = X.astype(float)
+
         # Split data - Use smaller test set (10%) for more training data
         test_size = 0.10  # Reduced from 0.20 to 0.10 for more training data
         X_train, X_test, y_train, y_test = train_test_split(

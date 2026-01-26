@@ -11,6 +11,7 @@ import pandas as pd
 import numpy as np
 import joblib
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score, StratifiedKFold
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, classification_report, roc_auc_score
 from sklearn.preprocessing import StandardScaler, RobustScaler
@@ -65,22 +66,57 @@ def load_and_merge_data(climate_file, cases_file):
         traceback.print_exc()
         return None
 
-def create_advanced_features(df):
-    """Create advanced features for better model performance
-    Only includes features that can be computed from single inputs (no historical context needed)
-    """
+def create_advanced_features(df, barangay_encoder=None):
+    """Create advanced features for better model performance, including barangay temporal trends"""
     print("\nCreating advanced features...")
     
     df_fe = df.copy()
+
+    # Barangay temporal features (lagged cases + rolling average)
+    if 'barangay' in df_fe.columns and 'cases' in df_fe.columns:
+        monthly = df_fe[['barangay', 'date', 'cases']].copy()
+        monthly['month_period'] = monthly['date'].dt.to_period('M')
+        monthly = (
+            monthly.groupby(['barangay', 'month_period'], as_index=False)['cases']
+            .sum()
+            .sort_values(['barangay', 'month_period'])
+        )
+        monthly['prev_month_cases'] = monthly.groupby('barangay')['cases'].shift(1)
+        monthly['rolling_3mo_avg_cases'] = (
+            monthly.groupby('barangay')['cases']
+            .shift(1)
+            .rolling(3, min_periods=1)
+            .mean()
+        )
+        monthly[['prev_month_cases', 'rolling_3mo_avg_cases']] = (
+            monthly[['prev_month_cases', 'rolling_3mo_avg_cases']].fillna(0)
+        )
+        df_fe['month_period'] = df_fe['date'].dt.to_period('M')
+        df_fe = df_fe.merge(
+            monthly[['barangay', 'month_period', 'prev_month_cases', 'rolling_3mo_avg_cases']],
+            on=['barangay', 'month_period'],
+            how='left'
+        )
+        df_fe[['prev_month_cases', 'rolling_3mo_avg_cases']] = (
+            df_fe[['prev_month_cases', 'rolling_3mo_avg_cases']].fillna(0)
+        )
+        df_fe = df_fe.drop(columns=['month_period'])
+    else:
+        df_fe['prev_month_cases'] = 0
+        df_fe['rolling_3mo_avg_cases'] = 0
     
     # 0. Encode barangay as categorical feature (if present)
     if 'barangay' in df_fe.columns:
-        # Use label encoding for barangay
-        from sklearn.preprocessing import LabelEncoder
-        le = LabelEncoder()
-        df_fe['barangay_encoded'] = le.fit_transform(df_fe['barangay'])
-        # Store the encoder for later use in prediction
-        df_fe._barangay_encoder = le
+        if barangay_encoder is not None:
+            df_fe['barangay_encoded'] = barangay_encoder.transform(df_fe['barangay'])
+            df_fe._barangay_encoder = barangay_encoder
+        else:
+            # Use label encoding for barangay
+            from sklearn.preprocessing import LabelEncoder
+            le = LabelEncoder()
+            df_fe['barangay_encoded'] = le.fit_transform(df_fe['barangay'])
+            # Store the encoder for later use in prediction
+            df_fe._barangay_encoder = le
     
     # 1. Temporal features (can be computed from date)
     df_fe['month'] = df_fe['date'].dt.month
@@ -186,7 +222,7 @@ def train_model(df, use_hyperparameter_tuning=True):
             numeric_cols.remove('cases')  # Remove raw cases count - data leak! We use label instead
         
         # Define features and label
-        X = df_fe[numeric_cols]
+        X = df_fe[numeric_cols].astype(float)
         y = df_fe['label']
 
         print(f"\nFeatures: {len(X.columns)} features")
@@ -293,9 +329,14 @@ def train_model(df, use_hyperparameter_tuning=True):
         cv_scores = cross_val_score(model, X_train, y_train, cv=cv, scoring='accuracy')
         print(f"   CV Accuracy: {cv_scores.mean():.4f} (+/- {cv_scores.std() * 2:.4f})")
 
-        # Predictions
-        y_pred = model.predict(X_test)
-        y_pred_proba = model.predict_proba(X_test)[:, 1]
+        # Probability calibration to improve interpretability
+        print("\nCalibrating probabilities (sigmoid)...")
+        calibrated_model = CalibratedClassifierCV(model, method="sigmoid", cv=3)
+        calibrated_model.fit(X_train, y_train)
+
+        # Predictions (calibrated)
+        y_pred = calibrated_model.predict(X_test)
+        y_pred_proba = calibrated_model.predict_proba(X_test)[:, 1]
 
         # Metrics
         acc = accuracy_score(y_test, y_pred)
@@ -356,7 +397,7 @@ def train_model(df, use_hyperparameter_tuning=True):
         feature_names_path = Path(__file__).parent.parent / "feature_names.pkl"
         encoder_path = Path(__file__).parent.parent / "barangay_encoder.pkl"
         
-        joblib.dump(model, model_path)
+        joblib.dump(calibrated_model, model_path)
         joblib.dump(list(X.columns), feature_names_path)
         
         # Save barangay encoder if it exists
@@ -366,7 +407,7 @@ def train_model(df, use_hyperparameter_tuning=True):
         
         print(f"\nModel saved to: {model_path}")
         print(f"Feature names saved to: {feature_names_path}")
-        print(f"   Model type: {type(model).__name__}")
+        print(f"   Model type: {type(calibrated_model).__name__}")
         print(f"   Number of features: {len(X.columns)}")
         print(f"   Number of trees: {model.n_estimators}")
         print(f"   OOB Score: {model.oob_score_:.4f}" if hasattr(model, 'oob_score_') else "")
@@ -423,7 +464,7 @@ if __name__ == "__main__":
     if df is not None:
         # Train model with hyperparameter tuning
         # Set to False for faster training, True for best accuracy
-        model, feature_names = train_model(df, use_hyperparameter_tuning=True)
+        model, feature_names = train_model(df, use_hyperparameter_tuning=False)
         
         if model is not None:
             print("\n" + "="*70)

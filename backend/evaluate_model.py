@@ -36,15 +36,51 @@ def load_and_merge_data(climate_file, cases_file):
         print(f"Error loading data: {e}")
         return None
 
-def create_advanced_features(df):
-    """Create advanced features (same as training)"""
+def create_advanced_features(df, barangay_encoder=None):
+    """Create advanced features (same as training, including barangay temporal trends)"""
     df_fe = df.copy()
+
+    # Barangay temporal features (lagged cases + rolling average)
+    if 'barangay' in df_fe.columns and 'cases' in df_fe.columns:
+        monthly = df_fe[['barangay', 'date', 'cases']].copy()
+        monthly['month_period'] = monthly['date'].dt.to_period('M')
+        monthly = (
+            monthly.groupby(['barangay', 'month_period'], as_index=False)['cases']
+            .sum()
+            .sort_values(['barangay', 'month_period'])
+        )
+        monthly['prev_month_cases'] = monthly.groupby('barangay')['cases'].shift(1)
+        monthly['rolling_3mo_avg_cases'] = (
+            monthly.groupby('barangay')['cases']
+            .shift(1)
+            .rolling(3, min_periods=1)
+            .mean()
+        )
+        monthly[['prev_month_cases', 'rolling_3mo_avg_cases']] = (
+            monthly[['prev_month_cases', 'rolling_3mo_avg_cases']].fillna(0)
+        )
+        df_fe['month_period'] = df_fe['date'].dt.to_period('M')
+        df_fe = df_fe.merge(
+            monthly[['barangay', 'month_period', 'prev_month_cases', 'rolling_3mo_avg_cases']],
+            on=['barangay', 'month_period'],
+            how='left'
+        )
+        df_fe[['prev_month_cases', 'rolling_3mo_avg_cases']] = (
+            df_fe[['prev_month_cases', 'rolling_3mo_avg_cases']].fillna(0)
+        )
+        df_fe = df_fe.drop(columns=['month_period'])
+    else:
+        df_fe['prev_month_cases'] = 0
+        df_fe['rolling_3mo_avg_cases'] = 0
     
     # 0. Encode barangay as categorical feature (if present)
     if 'barangay' in df_fe.columns:
-        from sklearn.preprocessing import LabelEncoder
-        le = LabelEncoder()
-        df_fe['barangay_encoded'] = le.fit_transform(df_fe['barangay'])
+        if barangay_encoder is not None:
+            df_fe['barangay_encoded'] = barangay_encoder.transform(df_fe['barangay'])
+        else:
+            from sklearn.preprocessing import LabelEncoder
+            le = LabelEncoder()
+            df_fe['barangay_encoded'] = le.fit_transform(df_fe['barangay'])
     
     # Temporal features
     df_fe['month'] = df_fe['date'].dt.month
@@ -132,6 +168,10 @@ def evaluate_model():
     # Load model
     print("Loading model...")
     model = joblib.load(model_path)
+
+    # Load barangay encoder (if available)
+    encoder_path = base_dir / "barangay_encoder.pkl"
+    barangay_encoder = joblib.load(encoder_path) if encoder_path.exists() else None
     
     # Load and prepare data
     print("Loading and preparing data...")
@@ -140,7 +180,7 @@ def evaluate_model():
         sys.exit(1)
     
     # Create features
-    df_fe = create_advanced_features(df)
+    df_fe = create_advanced_features(df, barangay_encoder=barangay_encoder)
     
     # Get numeric columns (excluding date, label, and cases)
     numeric_cols = df_fe.select_dtypes(include=[np.number]).columns.tolist()
