@@ -23,21 +23,26 @@ const Home = () => {
       .catch(console.error)
     
     // Load weather for theming
-    getCurrentWeather().then((data) => {
-      setWeather(data)
-      setLastUpdate(new Date())
-      
-      // Set theme based on weather
-      if (data.condition === 'Rain' || data.rainfall > 20) {
-        setTheme('rainy')
-      } else if (data.condition === 'Clear' && data.temperature > 30) {
-        setTheme('sunny')
-      } else if (data.condition === 'Clouds') {
-        setTheme('cloudy')
-      } else {
+    getCurrentWeather()
+      .then((data) => {
+        setWeather(data)
+        setLastUpdate(new Date())
+        
+        // Set theme based on weather
+        if (data.condition === 'Rain' || data.rainfall > 20) {
+          setTheme('rainy')
+        } else if (data.condition === 'Clear' && data.temperature > 30) {
+          setTheme('sunny')
+        } else if (data.condition === 'Clouds') {
+          setTheme('cloudy')
+        } else {
+          setTheme('default')
+        }
+      })
+      .catch((error) => {
+        console.error('Error loading weather:', error)
         setTheme('default')
-      }
-    })
+      })
     // Load current barangay risks for summary
     const loadBarangayRisks = async () => {
       try {
@@ -63,9 +68,13 @@ const Home = () => {
   }, [])
 
   const handleRefresh = async () => {
-    const data = await getCurrentWeather()
-    setWeather(data)
-    setLastUpdate(new Date())
+    try {
+      const data = await getCurrentWeather()
+      setWeather(data)
+      setLastUpdate(new Date())
+    } catch (error) {
+      console.error('Error refreshing weather:', error)
+    }
   }
 
   const formatTime = (date) => {

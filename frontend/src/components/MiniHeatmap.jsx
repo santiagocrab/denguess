@@ -119,13 +119,23 @@ const MiniHeatmap = () => {
     fetchBoundaries()
     
     // Load current weather for tooltips
-    getCurrentWeather().then(setWeather)
+    getCurrentWeather()
+      .then(setWeather)
+      .catch((error) => {
+        console.error('Error loading weather for heatmap:', error)
+      })
     
     // Subscribe to weather updates to refresh predictions when weather changes
-    const weatherCleanup = subscribeToWeatherUpdates((weatherData) => {
-      setWeather(weatherData)
-      fetchAllPredictions()
-    }, 300000)  // Also refresh every 5 minutes
+    const weatherCleanup = subscribeToWeatherUpdates(
+      (weatherData) => {
+        setWeather(weatherData)
+        fetchAllPredictions()
+      },
+      300000,
+      (error) => {
+        console.error('Weather update error:', error)
+      }
+    )  // Also refresh every 5 minutes
     
     // Refresh predictions every 5 minutes (same as barangay pages)
     const interval = setInterval(() => {
