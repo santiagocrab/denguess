@@ -6,7 +6,7 @@ const KORONADAL_COORDS = {
 }
 
 const WEATHER_CACHE_KEY = 'denguess:lastWeather'
-const WEATHER_CACHE_TTL_MS = 1000 * 60 * 60 * 6 // 6 hours
+const WEATHER_CACHE_TTL_MS = 1000 * 60 * 30 // 30 minutes
 
 const readCachedWeather = () => {
   if (typeof window === 'undefined') return null
@@ -32,7 +32,7 @@ const writeCachedWeather = (data) => {
   } catch {}
 }
 
-// Get current weather from OpenWeatherMap (fallback to cached/simulated)
+// Get current weather from OpenWeatherMap (fallback to cached OpenWeather only)
 export const getCurrentWeather = async () => {
   try {
     const API_KEY = import.meta.env.VITE_WEATHER_API_KEY
@@ -82,12 +82,12 @@ export const getCurrentWeather = async () => {
     writeCachedWeather(payload)
     return payload
   } catch (error) {
-    console.error('Error fetching weather, using defaults:', error)
+    console.error('Error fetching weather:', error)
     const cached = readCachedWeather()
-    if (cached) {
+    if (cached && cached.source === 'OpenWeatherMap') {
       return { ...cached, source: 'Cached' }
     }
-    return getSimulatedWeather()
+    throw error
   }
 }
 
@@ -143,51 +143,48 @@ const getSimulatedWeather = () => {
 export const getForecast = async () => {
   try {
     const API_KEY = import.meta.env.VITE_WEATHER_API_KEY
-    
-    if (API_KEY) {
-      const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/forecast?lat=${KORONADAL_COORDS.lat}&lon=${KORONADAL_COORDS.lon}&appid=${API_KEY}&units=metric&cnt=40`
-      )
-
-      if (!response.ok) {
-        throw new Error(`OpenWeatherMap forecast error: ${response.status}`)
-      }
-
-      const data = await response.json()
-      // Group by day and get daily forecasts
-      const dailyForecasts = []
-      const seenDates = new Set()
-      
-      data.list.forEach(item => {
-        const date = new Date(item.dt * 1000)
-        const dateKey = date.toDateString()
-        
-        if (!seenDates.has(dateKey) && dailyForecasts.length < 7) {
-          seenDates.add(dateKey)
-          dailyForecasts.push({
-            date: date,
-            dateKey: dateKey,
-            temp: Math.round(item.main.temp),
-            tempMin: Math.round(item.main.temp_min),
-            tempMax: Math.round(item.main.temp_max),
-            humidity: item.main.humidity,
-            rainfall: item.rain ? (item.rain['3h'] || 0) : 0,
-            condition: item.weather[0]?.main || 'Clear',
-            icon: item.weather[0]?.icon || '01d',
-            windSpeed: item.wind?.speed ? Math.round(item.wind.speed * 3.6) : 0
-          })
-        }
-      })
-      
-      if (dailyForecasts.length > 0) {
-        return dailyForecasts
-      }
+    if (!API_KEY) {
+      throw new Error('Missing VITE_WEATHER_API_KEY for OpenWeatherMap')
     }
 
-    return getSimulatedForecast()
+    const response = await fetch(
+      `https://api.openweathermap.org/data/2.5/forecast?lat=${KORONADAL_COORDS.lat}&lon=${KORONADAL_COORDS.lon}&appid=${API_KEY}&units=metric&cnt=40`
+    )
+
+    if (!response.ok) {
+      throw new Error(`OpenWeatherMap forecast error: ${response.status}`)
+    }
+
+    const data = await response.json()
+    // Group by day and get daily forecasts
+    const dailyForecasts = []
+    const seenDates = new Set()
+    
+    data.list.forEach(item => {
+      const date = new Date(item.dt * 1000)
+      const dateKey = date.toDateString()
+      
+      if (!seenDates.has(dateKey) && dailyForecasts.length < 7) {
+        seenDates.add(dateKey)
+        dailyForecasts.push({
+          date: date,
+          dateKey: dateKey,
+          temp: Math.round(item.main.temp),
+          tempMin: Math.round(item.main.temp_min),
+          tempMax: Math.round(item.main.temp_max),
+          humidity: item.main.humidity,
+          rainfall: item.rain ? (item.rain['3h'] || 0) : 0,
+          condition: item.weather[0]?.main || 'Clear',
+          icon: item.weather[0]?.icon || '01d',
+          windSpeed: item.wind?.speed ? Math.round(item.wind.speed * 3.6) : 0
+        })
+      }
+    })
+    
+    return dailyForecasts
   } catch (error) {
     console.error('Error fetching forecast:', error)
-    return getSimulatedForecast()
+    return []
   }
 }
 

@@ -7,6 +7,7 @@ const WeatherCard = () => {
   const [weather, setWeather] = useState(null)
   const [lastUpdate, setLastUpdate] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const cardRef = useRef(null)
 
   useEffect(() => {
@@ -14,6 +15,7 @@ const WeatherCard = () => {
       setWeather(data)
       setLastUpdate(new Date())
       setLoading(false)
+      setError(null)
       
       // Animate card when weather updates
       if (cardRef.current) {
@@ -21,8 +23,14 @@ const WeatherCard = () => {
       }
     }
 
-    getCurrentWeather().then(updateWeather)
-    const cleanup = subscribeToWeatherUpdates(updateWeather, 900000) // 15 minutes
+    const handleError = (err) => {
+      console.error('Weather fetch error:', err)
+      setError(err?.message || 'Unable to load live weather data')
+      setLoading(false)
+    }
+
+    getCurrentWeather().then(updateWeather).catch(handleError)
+    const cleanup = subscribeToWeatherUpdates(updateWeather, 900000, handleError) // 15 minutes
 
     return cleanup
   }, [])
@@ -57,6 +65,17 @@ const WeatherCard = () => {
       <div className="bg-white rounded-xl p-6 shadow-lg border-2 border-gray-200 animate-slide-up">
         <div className="flex items-center justify-center h-32">
           <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#D64541] border-t-transparent"></div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-xl p-6 shadow-lg border-2 border-red-200 animate-slide-up">
+        <div className="text-center text-red-700">
+          <div className="font-semibold mb-2">Live weather unavailable</div>
+          <div className="text-sm">{error}</div>
         </div>
       </div>
     )

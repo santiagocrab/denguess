@@ -1,11 +1,7 @@
 // Service Worker for Denguess PWA
-const CACHE_NAME = 'denguess-v1'
+const CACHE_NAME = 'denguess-v2'
 const urlsToCache = [
-  '/',
-  '/index.html',
   '/logo.png',
-  '/static/css/main.css',
-  '/static/js/main.js',
 ]
 
 // Install event - cache resources
@@ -44,6 +40,13 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (event.request.method !== 'GET') {
+    return
+  }
+
+  // Always fetch HTML from network to avoid stale builds
+  const acceptHeader = event.request.headers.get('accept') || ''
+  if (event.request.mode === 'navigate' || acceptHeader.includes('text/html')) {
+    event.respondWith(fetch(event.request))
     return
   }
 
