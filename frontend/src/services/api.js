@@ -22,6 +22,28 @@ const api = axios.create({
   timeout: API_TIMEOUT, // 90 seconds - backend needs time to wake up from sleep
 })
 
+const CACHE_TTL_MS = 1000 * 60 * 10 // 10 minutes
+const cacheGet = (key) => {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = localStorage.getItem(key)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (!parsed?.data || !parsed?.savedAt) return null
+    if (Date.now() - parsed.savedAt > CACHE_TTL_MS) return null
+    return parsed.data
+  } catch {
+    return null
+  }
+}
+
+const cacheSet = (key, data) => {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(key, JSON.stringify({ savedAt: Date.now(), data }))
+  } catch {}
+}
+
 // Add request interceptor for debugging
 api.interceptors.request.use(
   (config) => {
@@ -53,9 +75,13 @@ api.interceptors.response.use(
 )
 
 export const getBarangays = async () => {
+  const cached = cacheGet('denguess:barangays')
+  if (cached) return cached
   const response = await api.get('/barangays')
   const barangays = response?.data?.barangays
-  return Array.isArray(barangays) ? barangays : []
+  const list = Array.isArray(barangays) ? barangays : []
+  cacheSet('denguess:barangays', list)
+  return list
 }
 
 export const predictDengueRisk = async (barangay, climate, date) => {
@@ -162,7 +188,10 @@ export const getWeeklyPredictions = async (barangay, startDate) => {
 }
 
 export const getInsights = async () => {
+  const cached = cacheGet('denguess:insights')
+  if (cached) return cached
   const response = await api.get('/insights')
+  cacheSet('denguess:insights', response.data)
   return response.data
 }
 
