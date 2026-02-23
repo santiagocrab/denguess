@@ -20,7 +20,6 @@ const BarangayPage = ({ barangay }) => {
   })
   const [weather, setWeather] = useState(null)
   const [lastUpdate, setLastUpdate] = useState(null)
-  const [weatherError, setWeatherError] = useState(null)
   const [selectedDate] = useState(
     new Date().toISOString().split('T')[0]
   )
@@ -70,7 +69,6 @@ const BarangayPage = ({ barangay }) => {
     const updateWeather = (weatherData) => {
       setWeather(weatherData)
       setLastUpdate(new Date())
-      setWeatherError(null)
       setClimateData({
         temperature: weatherData.temperature,
         humidity: weatherData.humidity,
@@ -78,13 +76,8 @@ const BarangayPage = ({ barangay }) => {
       })
     }
 
-    const handleWeatherError = (err) => {
-      console.error('Weather fetch error:', err)
-      setWeatherError(err?.message || 'Unable to load live weather data')
-    }
-
-    getCurrentWeather().then(updateWeather).catch(handleWeatherError)
-    const cleanup = subscribeToWeatherUpdates(updateWeather, 300000, handleWeatherError)
+    getCurrentWeather().then(updateWeather)
+    const cleanup = subscribeToWeatherUpdates(updateWeather, 300000)
 
     return cleanup
   }, [])
@@ -264,9 +257,9 @@ const BarangayPage = ({ barangay }) => {
             <p className="text-gray-600">Real-time weather data from Koronadal City (Auto-updated)</p>
           </div>
 
-          {weatherError && (
-            <div className="mb-4 text-sm text-red-600">
-              Live weather unavailable: {weatherError}
+          {weather && weather.source !== 'OpenWeatherMap' && (
+            <div className="mb-4 text-sm text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2">
+              Live weather unavailable. Showing fallback data ({weather.source}).
             </div>
           )}
 

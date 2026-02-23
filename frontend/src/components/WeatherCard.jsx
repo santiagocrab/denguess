@@ -76,6 +76,11 @@ const WeatherCard = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
+      {weather.source !== 'OpenWeatherMap' && (
+        <div className="mb-4 rounded-lg border border-yellow-300 bg-yellow-50 px-3 py-2 text-xs text-yellow-800">
+          Live weather unavailable. Showing fallback data ({weather.source}).
+        </div>
+      )}
       <div className="flex items-center justify-between mb-6">
         <div className="flex-1">
           <div className="text-lg md:text-xl font-semibold text-gray-700 mb-2">Koronadal City</div>
