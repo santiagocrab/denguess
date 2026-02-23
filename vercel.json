@@ -25,6 +25,10 @@
   ],
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": "https://denguess-backend.onrender.com/$1"
+    },
+    {
       "source": "/admin",
       "destination": "/index.html"
     },

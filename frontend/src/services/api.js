@@ -3,9 +3,9 @@ import { getCurrentWeather } from './weather'
 
 // Detect if we're in production (Vercel)
 const isProduction = import.meta.env.PROD
-// Use environment variable or default to Render backend
-// Always have a fallback URL to prevent empty baseURL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://denguess-backend.onrender.com'
+// Use environment variable or default to proxy/local backend
+// In production on Vercel, use same-origin /api to avoid CORS.
+const API_BASE_URL = import.meta.env.VITE_API_URL || (isProduction ? '/api' : 'http://localhost:8000')
 
 // API Configuration - Version 2.0 (Updated timeout to 90s)
 const API_TIMEOUT = 90000 // 90 seconds - backend needs time to wake up from sleep
