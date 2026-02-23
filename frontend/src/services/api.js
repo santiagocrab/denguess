@@ -7,8 +7,8 @@ const isProduction = import.meta.env.PROD
 // In production on Vercel, use same-origin /api to avoid CORS.
 const API_BASE_URL = import.meta.env.VITE_API_URL || (isProduction ? '/api' : 'http://localhost:8000')
 
-// API Configuration - Version 2.0 (Updated timeout to 90s)
-const API_TIMEOUT = 90000 // 90 seconds - backend needs time to wake up from sleep
+// API Configuration - Version 2.1 (Updated timeout to 120s)
+const API_TIMEOUT = 120000 // 120 seconds - backend needs time to wake up from sleep
 
 console.log('[API] Base URL:', API_BASE_URL || 'NOT SET - using default')
 console.log('[API] Environment:', isProduction ? 'Production' : 'Development')
@@ -200,10 +200,26 @@ let predictionsCache = null
 let cacheTimestamp = null
 const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
+let lastWarmupAt = 0
+const WARMUP_COOLDOWN_MS = 1000 * 60 * 2 // 2 minutes
+
+const warmUpBackend = async () => {
+  const now = Date.now()
+  if (now - lastWarmupAt < WARMUP_COOLDOWN_MS) {
+    return
+  }
+  lastWarmupAt = now
+  try {
+    await api.get('/health', { timeout: 30000 })
+  } catch (err) {
+    console.warn('Backend warmup failed:', err.message)
+  }
+}
+
 // Check if backend is healthy
 export const checkBackendHealth = async () => {
   try {
-    const response = await api.get('/health', { timeout: 10000 }) // Increased to 10 seconds
+    const response = await api.get('/health', { timeout: 20000 })
     return response.data?.status === 'healthy'
   } catch (err) {
     console.warn('Backend health check failed:', err.message)
@@ -225,6 +241,7 @@ export const getAllBarangayPredictionsOptimized = async () => {
     }
 
     const startDate = new Date().toISOString().split('T')[0]
+    await warmUpBackend()
     
     // Get weather data
     let weatherData
@@ -250,7 +267,7 @@ export const getAllBarangayPredictionsOptimized = async () => {
       const response = await api.post('/predict/all-barangays', {
         climate,
         date: startDate
-      }, { timeout: 60000 })
+      }, { timeout: 120000 })
       
       if (response.data && response.data.predictions) {
         const predictionsObj = {}
@@ -350,6 +367,7 @@ export const getAllBarangayPredictions = async (useCache = true) => {
     }
 
     const barangays = await getBarangays()
+    await warmUpBackend()
     const startDate = new Date().toISOString().split('T')[0]
     
     // Use real-time weather data for accurate predictions (same as barangay pages)
