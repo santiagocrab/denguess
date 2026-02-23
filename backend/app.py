@@ -5,6 +5,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 from contextlib import asynccontextmanager
+import re
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import joblib
@@ -46,10 +47,27 @@ app = FastAPI(
 )
 
 # Add CORS middleware FIRST - this is critical for Vercel
+ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "https://denguess.vercel.app",
+]
+ALLOWED_ORIGIN_REGEX = r"^https://.*\.vercel\.app$"
+
+def get_allowed_origin(origin: Optional[str]) -> Optional[str]:
+    if not origin:
+        return None
+    if origin in ALLOWED_ORIGINS:
+        return origin
+    if re.match(ALLOWED_ORIGIN_REGEX, origin):
+        return origin
+    return None
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for maximum compatibility
-    allow_credentials=True,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=ALLOWED_ORIGIN_REGEX,
+    allow_credentials=False,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"],
     allow_headers=["*"],
     expose_headers=["*"],
@@ -63,14 +81,17 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 @app.middleware("http")
 async def add_cors_headers(request, call_next):
     """Add CORS headers to ALL responses, including errors"""
+    origin = request.headers.get("origin")
+    allowed_origin = get_allowed_origin(origin)
     # Handle OPTIONS preflight requests
     if request.method == "OPTIONS":
         response = JSONResponse(content={})
-        response.headers["Access-Control-Allow-Origin"] = "*"
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH"
-        response.headers["Access-Control-Allow-Headers"] = "*"
-        response.headers["Access-Control-Allow-Credentials"] = "true"
-        response.headers["Access-Control-Max-Age"] = "3600"
+        if allowed_origin:
+            response.headers["Access-Control-Allow-Origin"] = allowed_origin
+            response.headers["Vary"] = "Origin"
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH"
+            response.headers["Access-Control-Allow-Headers"] = "*"
+            response.headers["Access-Control-Max-Age"] = "3600"
         return response
     
     # For all other requests, process normally then add CORS headers
@@ -83,12 +104,13 @@ async def add_cors_headers(request, call_next):
             status_code=500
         )
     
-    # Add CORS headers to every response
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH"
-    response.headers["Access-Control-Allow-Headers"] = "*"
-    response.headers["Access-Control-Allow-Credentials"] = "true"
-    response.headers["Access-Control-Max-Age"] = "3600"
+    # Add CORS headers to every response for allowed origins
+    if allowed_origin:
+        response.headers["Access-Control-Allow-Origin"] = allowed_origin
+        response.headers["Vary"] = "Origin"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        response.headers["Access-Control-Max-Age"] = "3600"
     return response
 
 # Load model
