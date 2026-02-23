@@ -25,38 +25,8 @@ const createPolygonFromCenter = (center, radius = 0.008) => {
 
 // Function to fetch real boundaries from Overpass API
 export const fetchBarangayBoundaries = async () => {
-  const overpassQuery = `
-    [out:json][timeout:50];
-    area["name"="Koronadal City"]->.searchArea;
-    (
-      relation["boundary"="administrative"]["admin_type:PH"="barangay"]["name"="General Paulino Santos"](area.searchArea);
-      relation["boundary"="administrative"]["admin_type:PH"="barangay"]["name"="Zone II"](area.searchArea);
-      relation["boundary"="administrative"]["admin_type:PH"="barangay"]["name"="Santa Cruz"](area.searchArea);
-      relation["boundary"="administrative"]["admin_type:PH"="barangay"]["name"="Santo Niño"](area.searchArea);
-      relation["boundary"="administrative"]["admin_type:PH"="barangay"]["name"="Morales"](area.searchArea);
-    );
-    out geom;
-  `
-
-  try {
-    const response = await fetch('https://overpass-api.de/api/interpreter', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: `data=${encodeURIComponent(overpassQuery)}`,
-    })
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch boundaries from Overpass API')
-    }
-
-    const data = await response.json()
-    return processOverpassData(data)
-  } catch (error) {
-    console.warn('Failed to fetch real boundaries, using approximate polygons:', error)
-    return getApproximateBoundaries()
-  }
+  // Overpass is intentionally disabled to avoid 429 rate limits during demos.
+  return getApproximateBoundaries()
 }
 
 // Process Overpass API response into usable format

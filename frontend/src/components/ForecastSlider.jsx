@@ -55,11 +55,11 @@ const ForecastSlider = () => {
         transition={{ duration: 0.6 }}
       >
         <div className="mb-4">
-          <h3 className="text-xl font-bold text-gray-900 mb-1">7-Day Forecast</h3>
+          <h3 className="text-xl font-bold text-gray-900 mb-1">5-Day Forecast</h3>
           <p className="text-sm text-gray-600">Koronadal City</p>
         </div>
         <div className="flex gap-3 overflow-x-auto pb-2">
-          {[1, 2, 3, 4, 5, 6, 7].map(i => (
+          {[1, 2, 3, 4, 5].map(i => (
             <div key={i} className="flex-shrink-0 w-20 h-24 bg-gray-100 rounded-lg animate-pulse"></div>
           ))}
         </div>
@@ -75,7 +75,7 @@ const ForecastSlider = () => {
       transition={{ duration: 0.6 }}
     >
       <div className="mb-4">
-        <h3 className="text-xl font-bold text-gray-900 mb-1">7-Day Forecast</h3>
+        <h3 className="text-xl font-bold text-gray-900 mb-1">5-Day Forecast</h3>
         <p className="text-sm text-gray-600">Koronadal City</p>
       </div>
       {forecast.length === 0 ? (
