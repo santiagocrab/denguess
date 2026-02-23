@@ -85,6 +85,7 @@ export const getBarangays = async () => {
 }
 
 export const predictDengueRisk = async (barangay, climate, date) => {
+  await warmUpBackend()
   const response = await api.post('/predict', {
     barangay,
     climate,
@@ -146,6 +147,7 @@ export const predictBatch = async (requests) => {
 export const getWeeklyPredictions = async (barangay, startDate) => {
   // Use the new endpoint if available, otherwise fallback to old method
   try {
+    await warmUpBackend()
     // Get real-time weather data for accurate predictions
     const weatherData = await getCurrentWeather()
     const response = await api.get(`/predict/weekly/${encodeURIComponent(barangay)}`, {
