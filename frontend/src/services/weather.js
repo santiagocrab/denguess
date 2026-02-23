@@ -5,7 +5,34 @@ const KORONADAL_COORDS = {
   lon: 124.8470
 }
 
-// Get current weather from OpenWeatherMap (fallback to simulated if unavailable)
+const WEATHER_CACHE_KEY = 'denguess:lastWeather'
+const WEATHER_CACHE_TTL_MS = 1000 * 60 * 60 * 6 // 6 hours
+
+const readCachedWeather = () => {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = localStorage.getItem(WEATHER_CACHE_KEY)
+    if (!raw) return null
+    const cached = JSON.parse(raw)
+    if (!cached?.data || !cached?.savedAt) return null
+    if (Date.now() - cached.savedAt > WEATHER_CACHE_TTL_MS) return null
+    return cached.data
+  } catch {
+    return null
+  }
+}
+
+const writeCachedWeather = (data) => {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify({
+      savedAt: Date.now(),
+      data,
+    }))
+  } catch {}
+}
+
+// Get current weather from OpenWeatherMap (fallback to cached/simulated)
 export const getCurrentWeather = async () => {
   try {
     const API_KEY = import.meta.env.VITE_WEATHER_API_KEY
@@ -40,7 +67,7 @@ export const getCurrentWeather = async () => {
       rainfallPeriodHours = 3
     }
 
-    return {
+    const payload = {
       temperature: Math.round(data.main.temp * 10) / 10,
       humidity: data.main.humidity,
       rainfall: Math.round(rainfall * 10) / 10,
@@ -52,8 +79,14 @@ export const getCurrentWeather = async () => {
       location: 'Koronadal City, South Cotabato',
       source: 'OpenWeatherMap'
     }
+    writeCachedWeather(payload)
+    return payload
   } catch (error) {
     console.error('Error fetching weather, using defaults:', error)
+    const cached = readCachedWeather()
+    if (cached) {
+      return { ...cached, source: 'Cached' }
+    }
     return getSimulatedWeather()
   }
 }
@@ -146,7 +179,9 @@ export const getForecast = async () => {
         }
       })
       
-      return dailyForecasts
+      if (dailyForecasts.length > 0) {
+        return dailyForecasts
+      }
     }
 
     return getSimulatedForecast()
